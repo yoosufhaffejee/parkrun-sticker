@@ -4,185 +4,115 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>parkrun Overlay Generator</title>
+
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    input, button { padding: 10px 12px; font-size: 16px; }
-    input { min-width: 320px; }
-    button { cursor: pointer; }
-    #status { margin-top: 12px; opacity: 0.85; }
-    canvas { margin-top: 16px; border: 1px dashed #ccc; max-width: 100%; height: auto; }
-    .small { font-size: 13px; opacity: 0.75; margin-top: 8px; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 40px;
+      background: #f4f4f4;
+    }
+
+    h2 { margin-bottom: 20px; }
+
+    input, button {
+      padding: 10px 14px;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    canvas {
+      margin-top: 30px;
+      border: 1px dashed #ccc;
+      max-width: 100%;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
+
   <h2>parkrun Overlay Generator</h2>
 
   <div class="row">
-    <input id="url" placeholder="Results URL (e.g. https://www.parkrun.co.za/koster/results/2026-02-28/)" />
-    <input id="name" placeholder="Your name (e.g. Yoosuf)" />
+    <input id="timeInput" placeholder="Enter time (e.g. 32m 21s or 32:21)" />
+    <button onclick="generate()">Generate</button>
+    <button onclick="download()">Download PNG</button>
   </div>
 
-  <div class="row" style="margin-top:12px;">
-    <input id="proxy" placeholder="Proxy URL (Cloudflare Worker URL)" />
-    <button id="go">Generate</button>
-    <button id="download" disabled>Download PNG</button>
-  </div>
-
-  <div class="small">
-    Tip: You’ll need a proxy URL because browsers can’t fetch parkrun pages directly (CORS).
-  </div>
-
-  <div id="status"></div>
-  <canvas id="c" width="1200" height="628"></canvas>
+  <canvas id="canvas" width="1200" height="628"></canvas>
 
   <script>
-    const $ = (id) => document.getElementById(id);
+    const purple = "#2b2441"; // parkrun deep purple
 
-    const PARkrunPurple = "#2b2441"; // close to your deep purple overlay vibe
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-    function setStatus(msg) { $("status").textContent = msg; }
-
-    function normalize(s) {
-      return (s || "").toLowerCase().replace(/\s+/g, " ").trim();
-    }
-
-    async function fetchHtmlViaProxy(proxyUrl, targetUrl) {
-      const u = new URL(proxyUrl);
-      u.searchParams.set("url", targetUrl);
-      const res = await fetch(u.toString(), { method: "GET" });
-      if (!res.ok) { throw new Error(`Proxy fetch failed: ${res.status}`); }
-      return await res.text();
-    }
-
-    function extractNameTimeFromHtml(html, userName) {
-      const doc = new DOMParser().parseFromString(html, "text/html");
-
-      // Most parkrun result pages have a table of results. We'll scan all rows for name+time.
-      const rows = Array.from(doc.querySelectorAll("table tr"));
-      const target = normalize(userName);
-
-      // Heuristic: find row where any cell contains the name and another looks like a time mm:ss or hh:mm:ss
-      const timeRegex = /^(\d{1,2}:)?\d{1,2}:\d{2}$/; // e.g. 32:21 or 1:02:33
-
-      for (const r of rows) {
-        const tds = Array.from(r.querySelectorAll("td"));
-        if (tds.length === 0) continue;
-
-        const cellTexts = tds.map(_ => (_.textContent || "").trim());
-        const rowText = normalize(cellTexts.join(" "));
-
-        if (!rowText.includes(target)) continue;
-
-        // Find time-looking cell
-        const timeCell = cellTexts.find(t => timeRegex.test(t));
-        if (timeCell) {
-          return { time: timeCell, matchedRow: cellTexts };
-        }
-      }
-
-      // Fallback: try to find an exact name match in any anchor or strong etc.
-      const candidates = Array.from(doc.querySelectorAll("td, a, span, strong"))
-        .map(el => (el.textContent || "").trim())
-        .filter(Boolean);
-
-      return { time: null, matchedRow: null, debugCandidates: candidates.slice(0, 50) };
-    }
-
-    function drawOverlay({ time, distanceKm }) {
-      const canvas = $("c");
-      const ctx = canvas.getContext("2d");
+    function draw(timeText) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Transparent background: we draw ONLY the overlay text. Nothing else.
-      // Layout similar to your winner: parkrun wordmark on top, then TIME | DISTANCE blocks.
       const centerX = canvas.width / 2;
 
-      // parkrun wordmark (text approximation)
-      // If you want the exact official logo, we can replace this with an uploaded PNG in a later iteration.
-      ctx.fillStyle = PARkrunPurple;
+      ctx.fillStyle = purple;
       ctx.textAlign = "center";
 
-      // Wordmark
+      // parkrun wordmark (text version)
       ctx.font = "bold 120px system-ui, -apple-system, Segoe UI, Roboto, Arial";
       ctx.fillText("parkrun", centerX, 240);
 
+      const labelY = 360;
+      const valueY = 450;
+      const gap = 260;
+
       // Labels
-      ctx.font = "700 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      const blockTopY = 330;
-      const blockGap = 260;
+      ctx.font = "700 32px system-ui";
+      ctx.globalAlpha = 0.85;
+      ctx.fillText("TIME", centerX - gap, labelY);
+      ctx.fillText("DISTANCE", centerX + gap, labelY);
 
-      // TIME label
-      ctx.globalAlpha = 0.9;
-      ctx.fillText("TIME", centerX - blockGap, blockTopY);
-
-      // DISTANCE label
-      ctx.fillText("DISTANCE", centerX + blockGap, blockTopY);
+      ctx.globalAlpha = 1;
 
       // Values
-      ctx.globalAlpha = 1.0;
-      ctx.font = "800 80px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillText(time, centerX - blockGap, blockTopY + 95);
-      ctx.fillText(`${distanceKm} km`, centerX + blockGap, blockTopY + 95);
+      ctx.font = "800 80px system-ui";
+      ctx.fillText(timeText, centerX - gap, valueY);
+      ctx.fillText("5 km", centerX + gap, valueY);
 
       // Divider
-      ctx.strokeStyle = PARkrunPurple;
       ctx.globalAlpha = 0.35;
       ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(centerX, blockTopY - 20);
-      ctx.lineTo(centerX, blockTopY + 120);
+      ctx.moveTo(centerX, labelY - 20);
+      ctx.lineTo(centerX, valueY + 30);
+      ctx.strokeStyle = purple;
       ctx.stroke();
-      ctx.globalAlpha = 1.0;
+      ctx.globalAlpha = 1;
     }
 
-    function downloadPng() {
-      const canvas = $("c");
-      const a = document.createElement("a");
-      a.download = "parkrun-overlay.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    }
-
-    $("download").addEventListener("click", downloadPng);
-
-    $("go").addEventListener("click", async () => {
-      try {
-        $("download").disabled = true;
-
-        const url = $("url").value.trim();
-        const name = $("name").value.trim();
-        const proxy = $("proxy").value.trim();
-
-        if (!url || !name || !proxy) {
-          setStatus("Please fill in Results URL, Name, and Proxy URL.");
-          return;
-        }
-
-        setStatus("Fetching results...");
-        const html = await fetchHtmlViaProxy(proxy, url);
-
-        setStatus("Searching for your name...");
-        const found = extractNameTimeFromHtml(html, name);
-
-        if (!found.time) {
-          setStatus("Could not find your time. Try a more exact name (e.g. first + last), or check the results page.");
-          return;
-        }
-
-        setStatus(`Found time: ${found.time}. Rendering overlay...`);
-        drawOverlay({ time: found.time, distanceKm: 5 });
-
-        $("download").disabled = false;
-        setStatus("Done. Click Download PNG.");
-      } catch (e) {
-        console.error(e);
-        setStatus(`Error: ${e.message}`);
+    function generate() {
+      const time = document.getElementById("timeInput").value.trim();
+      if (!time) {
+        alert("Enter a time first");
+        return;
       }
-    });
+      draw(time);
+    }
 
-    // initial blank overlay preview
-    drawOverlay({ time: "32:21", distanceKm: 5 });
+    function download() {
+      const link = document.createElement("a");
+      link.download = "parkrun-overlay.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    // Initial preview
+    draw("32m 21s");
   </script>
+
 </body>
 </html>
