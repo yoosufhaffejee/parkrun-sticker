@@ -58,6 +58,12 @@
       height: auto;
     }
 
+    .small {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--ui-muted);
+    }
+
     code {
       background: rgba(0,0,0,0.06);
       padding: 2px 6px;
@@ -81,32 +87,30 @@
   </div>
 
   <div class="hint">
-    Output is a transparent PNG overlay sticker (1200×628).<br/>
-    Uses <code>parkrun-logo.svg</code> if present (best: crisp + recolor), otherwise <code>parkrun-logo.png</code>.
+    Files supported (same folder as this HTML):<br/>
+    <code>parkrun-logo.svg</code> (preferred, recolored) → <code>parkrun-logo.png</code> (tinted if needed) → <code>parkrun-logo-320.png</code> (fallback).<br/>
+    If you open this file via <code>file://</code>, SVG recolor may be blocked by the browser. Use a local server or GitHub Pages for best results.
   </div>
+
+  <div class="small" id="status"></div>
 
   <canvas id="canvas" width="1200" height="628"></canvas>
 
   <script>
-    // --- Fixed output size (overlay sticker) ---
+    // Fixed overlay sticker size
     const CANVAS_W = 1200;
     const CANVAS_H = 628;
     const DISTANCE_KM = 5;
 
-    // --- Compact layout tuned to match your preferred “tight” version ---
-    // Key differences vs the spread-out version:
-    // - Smaller left/right gap
-    // - Smaller label text
-    // - Values closer together
-    // - Divider shorter and tighter
+    // Compact layout tuned to match your preferred look
     const LAYOUT = {
-      logoTopY: 96,
-      logoTargetW: 520,          // larger logo like your preferred image
-      afterLogoGapY: 28,         // tight spacing below logo
+      logoTopY: 88,
+      logoTargetW: 560,
+      afterLogoGapY: 26,
       labelsFontPx: 26,
       labelsOpacity: 0.85,
       valuesFontPx: 76,
-      gapFromCenterX: 205,       // COMPACT (this was the biggest “spread” culprit)
+      gapFromCenterX: 205,
       labelsToValuesY: 60,
       dividerWidth: 5,
       dividerOpacity: 0.28,
@@ -126,109 +130,159 @@
     const timeInput = document.getElementById("timeInput");
     const themeSelect = document.getElementById("themeSelect");
     const btnDownload = document.getElementById("btnDownload");
+    const statusEl = document.getElementById("status");
 
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
 
-    // --- Logo handling ---
-    // Prefer SVG for crisp scaling + recolor. Fall back to PNG.
-    const logoImg = new Image();
-    let logoReady = false;
-    let logoMode = "none"; // "svg" | "png" | "none"
-    let svgTextCache = null;
-    let currentLogoUrl = null;
+    function setStatus(msg) { statusEl.textContent = msg; }
 
     function getInk() {
       return (THEMES[themeSelect.value] || THEMES.parkrunPurple).ink;
     }
 
-    function defaultTime() {
-      return "00m 00s";
-    }
-
     function getTimeText() {
       const v = (timeInput.value || "").trim();
-      return v.length > 0 ? v : defaultTime();
+      return v.length > 0 ? v : "00m 00s";
     }
 
-    function revokeLogoUrlIfNeeded() {
-      if (currentLogoUrl && currentLogoUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(currentLogoUrl);
+    // --- Logo state ---
+    const logoImg = new Image();
+    let logoReady = false;
+    let logoKind = "none"; // "svg-recolor" | "svg-direct" | "png" | "none"
+    let blobUrl = null;
+
+    function revokeBlobUrl() {
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
       }
-      currentLogoUrl = null;
+      blobUrl = null;
     }
 
-    // Replace the seeklogo colors so the entire logo becomes the theme color.
-    // Your SVG contains fills like #2B233D and a gradient; we unify to a single color.
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    // Aggressive recolor: forces fills/strokes (handles inline styles, gradients)
     function recolorSvgToInk(svgText, ink) {
       let s = svgText;
 
-      // Replace known colors in your SVG
-      s = s.replaceAll("#2B233D", ink);
-      s = s.replaceAll("#2b233d", ink);
+      // Remove external refs just in case (rare)
+      // (We keep it simple: not stripping defs unless needed.)
 
-      // Replace gradient fill with ink (turn it into solid)
-      s = s.replaceAll('fill="url(#full_1_)"', `fill="${ink}"`);
+      // Force all fill/stroke attributes
+      s = s.replace(/fill="[^"]*"/gi, `fill="${ink}"`);
+      s = s.replace(/stroke="[^"]*"/gi, `stroke="${ink}"`);
 
-      // Replace any remaining white fills to ink as well (so it works in white theme too)
-      s = s.replaceAll('fill="#FFFFFF"', `fill="${ink}"`);
-      s = s.replaceAll('fill="#ffffff"', `fill="${ink}"`);
+      // Rewrite inline CSS styles
+      s = s.replace(/fill\s*:\s*[^;"]+/gi, `fill:${ink}`);
+      s = s.replace(/stroke\s*:\s*[^;"]+/gi, `stroke:${ink}`);
 
-      // Also update any stop-colors if they exist
-      s = s.replaceAll("stop-color:#2B233D", `stop-color:${ink}`);
-      s = s.replaceAll("stop-color:#2b233d", `stop-color:${ink}`);
+      // Replace gradient/pattern fills
+      s = s.replace(/fill="url\(#.+?\)"/gi, `fill="${ink}"`);
+
+      // Replace stop colors (if any)
+      s = s.replace(/stop-color\s*:\s*[^;"]+/gi, `stop-color:${ink}`);
+      s = s.replace(/stop-color="[^"]*"/gi, `stop-color="${ink}"`);
 
       return s;
     }
 
-    async function loadLogoForTheme() {
-      const ink = getInk();
+    async function loadSvgRecolored(url, ink) {
+      // This can fail on file:// due to fetch restrictions
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("SVG fetch failed");
+      const svgText = await res.text();
 
-      // Try SVG first (best)
-      try {
-        if (!svgTextCache) {
-          const res = await fetch("parkrun-seeklogo.svg", { cache: "no-store" });
-          if (!res.ok) throw new Error("SVG not found");
-          svgTextCache = await res.text();
-        }
+      const recolored = recolorSvgToInk(svgText, ink);
+      const blob = new Blob([recolored], { type: "image/svg+xml" });
 
-        const recolored = recolorSvgToInk(svgTextCache, ink);
-        const blob = new Blob([recolored], { type: "image/svg+xml" });
+      revokeBlobUrl();
+      blobUrl = URL.createObjectURL(blob);
 
-        revokeLogoUrlIfNeeded();
-        currentLogoUrl = URL.createObjectURL(blob);
-
-        await new Promise((resolve, reject) => {
-          logoReady = false;
-          logoImg.onload = () => { logoReady = true; logoMode = "svg"; resolve(); };
-          logoImg.onerror = reject;
-          logoImg.src = currentLogoUrl;
-        });
-
-        render();
-        return;
-      } catch {
-        // fall through to PNG
-      }
-
-      // Fallback PNG
-      try {
-        revokeLogoUrlIfNeeded();
-        await new Promise((resolve, reject) => {
-          logoReady = false;
-          logoImg.onload = () => { logoReady = true; logoMode = "png"; resolve(); };
-          logoImg.onerror = reject;
-          logoImg.src = "parkrun-logo.png";
-        });
-      } catch {
+      await new Promise((resolve, reject) => {
         logoReady = false;
-        logoMode = "none";
-      }
+        logoImg.onload = () => { logoReady = true; resolve(); };
+        logoImg.onerror = reject;
+        logoImg.src = blobUrl;
+      });
 
-      render();
+      logoKind = "svg-recolor";
+      setStatus(`Logo: ${url} (recolored)`);
     }
 
-    // Auto-crop transparent padding from rasterized image (works for PNG and browser-rasterized SVG)
+    async function loadSvgDirect(url) {
+      // No recolor, but shows the logo if fetch is blocked
+      await new Promise((resolve, reject) => {
+        logoReady = false;
+        logoImg.onload = () => { logoReady = true; resolve(); };
+        logoImg.onerror = reject;
+        logoImg.src = url;
+      });
+
+      logoKind = "svg-direct";
+      setStatus(`Logo: ${url} (direct, not recolored)`);
+    }
+
+    async function loadPng(url) {
+      await new Promise((resolve, reject) => {
+        logoReady = false;
+        logoImg.onload = () => { logoReady = true; resolve(); };
+        logoImg.onerror = reject;
+        logoImg.src = url;
+      });
+
+      logoKind = "png";
+      setStatus(`Logo: ${url}`);
+    }
+
+    // Try sources in order:
+    // 1) SVG recolor
+    // 2) SVG direct (if fetch blocked)
+    // 3) PNG hi-res
+    // 4) PNG old square
+    async function ensureLogoLoaded() {
+      const ink = getInk();
+
+      try {
+        await loadSvgRecolored("parkrun-logo.svg", ink);
+        return;
+      } catch (e) {
+        // continue
+      }
+
+      try {
+        await loadSvgDirect("parkrun-logo.svg");
+        return;
+      } catch (e) {
+        // continue
+      }
+
+      try {
+        await loadPng("parkrun-logo.png");
+        return;
+      } catch (e) {
+        // continue
+      }
+
+      try {
+        await loadPng("parkrun-logo-320.png");
+        return;
+      } catch (e) {
+        // continue
+      }
+
+      logoReady = false;
+      logoKind = "none";
+      setStatus("Logo: not found (add parkrun-logo.svg or parkrun-logo.png)");
+    }
+
+    // Crop transparent padding and draw centered
     function drawLogoCenteredCropped(_ctx, img, centerX, topY, targetWidth) {
       if (!img.width || !img.height) return 0;
 
@@ -277,18 +331,63 @@
       return drawH;
     }
 
+    // Tint PNG logos for theme exports (keeps crisp silhouette)
+    function drawTintedLogo(_ctx, img, x, y, w, h, ink) {
+      // draw to temp canvas then use source-in to colorize
+      const t = document.createElement("canvas");
+      t.width = Math.ceil(w);
+      t.height = Math.ceil(h);
+      const tctx = t.getContext("2d");
+
+      tctx.clearRect(0, 0, t.width, t.height);
+      tctx.drawImage(img, x, y, w, h, 0, 0, t.width, t.height);
+
+      tctx.globalCompositeOperation = "source-in";
+      tctx.fillStyle = ink;
+      tctx.fillRect(0, 0, t.width, t.height);
+      tctx.globalCompositeOperation = "source-over";
+
+      _ctx.drawImage(t, x, y, w, h);
+    }
+
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const ink = getInk();
       const centerX = canvas.width / 2;
 
-      // Draw logo
       let logoH = 0;
+
       if (logoReady) {
-        logoH = drawLogoCenteredCropped(ctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW);
+        // Draw cropped logo onto main canvas
+        // We need a small tweak if it's PNG and we want tint:
+        if (logoKind === "png" && themeSelect.value !== "parkrunPurple") {
+          // Crop first by drawing normally to temp then tint the final region.
+          // Approach: draw cropped logo to temp and tint there.
+          const t = document.createElement("canvas");
+          const tctx = t.getContext("2d", { willReadFrequently: true });
+
+          // First draw cropped logo to temp canvas at a known position (0,0)
+          // by reusing crop logic but with left-aligned coordinates.
+          t.width = canvas.width;
+          t.height = canvas.height;
+          tctx.clearRect(0, 0, t.width, t.height);
+
+          const tempH = drawLogoCenteredCropped(tctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW);
+          logoH = tempH;
+
+          // Now tint the region where logo exists (full temp canvas is ok; source-in respects alpha)
+          tctx.globalCompositeOperation = "source-in";
+          tctx.fillStyle = ink;
+          tctx.fillRect(0, 0, t.width, t.height);
+          tctx.globalCompositeOperation = "source-over";
+
+          ctx.drawImage(t, 0, 0);
+        } else {
+          logoH = drawLogoCenteredCropped(ctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW);
+        }
       } else {
-        // Fallback plain text if no assets available
+        // fallback text
         ctx.fillStyle = ink;
         ctx.textAlign = "center";
         ctx.font = "700 96px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -296,10 +395,8 @@
         logoH = 130;
       }
 
-      // Tight vertical spacing under logo
       const labelsY = LAYOUT.logoTopY + logoH + LAYOUT.afterLogoGapY;
       const valuesY = labelsY + LAYOUT.labelsToValuesY;
-
       const gapX = LAYOUT.gapFromCenterX;
 
       // Labels
@@ -316,7 +413,7 @@
       ctx.fillText(getTimeText(), centerX - gapX, valuesY);
       ctx.fillText(`${DISTANCE_KM} km`, centerX + gapX, valuesY);
 
-      // Divider (shorter + tighter)
+      // Divider
       ctx.globalAlpha = LAYOUT.dividerOpacity;
       ctx.strokeStyle = ink;
       ctx.lineWidth = LAYOUT.dividerWidth;
@@ -334,12 +431,13 @@
       a.click();
     }
 
-    // Live updates
+    // Live update
     timeInput.addEventListener("input", render);
 
-    // Recolor logo when theme changes (SVG only; PNG stays as-is)
-    themeSelect.addEventListener("change", () => {
-      loadLogoForTheme();
+    // Theme changes require reloading recolored SVG
+    themeSelect.addEventListener("change", async () => {
+      await ensureLogoLoaded();
+      render();
     });
 
     btnDownload.addEventListener("click", download);
@@ -347,7 +445,11 @@
     // Init
     timeInput.value = "";
     render();
-    loadLogoForTheme();
+
+    (async () => {
+      await ensureLogoLoaded();
+      render();
+    })();
   </script>
 </body>
 </html>
