@@ -11,12 +11,16 @@
     h2 { margin: 0 0 12px; }
     .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:12px; }
     input, button, select { padding:10px 12px; font-size:16px; border-radius:12px; border:1px solid var(--ui-border); background:#fff; }
-    input { min-width:240px; }
+    input[type="color"] { padding: 0; width: 44px; height: 44px; border-radius: 12px; }
+    input[type="text"] { min-width: 240px; }
     button { cursor:pointer; font-weight:600; }
     .hint { margin-top:10px; font-size:13px; color: var(--ui-muted); line-height:1.45; }
     .small { margin-top:8px; font-size:12px; color: var(--ui-muted); }
     canvas { margin-top:16px; border:1px dashed #c9c9c9; border-radius:12px; background:transparent; max-width:100%; height:auto; }
     code { background: rgba(0,0,0,0.06); padding:2px 6px; border-radius:8px; }
+    .group { display:flex; align-items:center; gap:10px; }
+    .groupLabel { font-size: 13px; color: var(--ui-muted); width: 80px; }
+    .pill { font-size: 12px; color: var(--ui-muted); padding: 6px 10px; border: 1px solid var(--ui-border); border-radius: 999px; background:#fff; }
   </style>
 </head>
 
@@ -24,19 +28,40 @@
   <h2>parkrun Overlay Sticker</h2>
 
   <div class="row">
-    <input id="timeInput" placeholder="Time (e.g. 32m 21s or 32:21)" />
-    <select id="themeSelect" title="Export color theme">
-      <option value="parkrunPurple" selected>parkrun Purple</option>
-      <option value="white">White (dark photos)</option>
-      <option value="black">Black (light photos)</option>
-      <option value="vitalityPink">Vitality Pink</option>
-    </select>
+    <input id="timeInput" type="text" placeholder="Time (e.g. 32m 21s or 32:21)" />
     <button id="btnDownload">Download PNG</button>
+    <span class="pill">Distance fixed: 5 km</span>
+  </div>
+
+  <div class="row">
+    <div class="group">
+      <span class="groupLabel">Logo</span>
+      <select id="logoPreset">
+        <option value="parkrunPurple" selected>parkrun Purple</option>
+        <option value="white">White</option>
+        <option value="black">Black</option>
+        <option value="vitalityPink">Vitality Pink</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <input id="logoColor" type="color" value="#2b2441" title="Logo custom color" />
+    </div>
+
+    <div class="group">
+      <span class="groupLabel">Info</span>
+      <select id="infoPreset">
+        <option value="parkrunPurple" selected>parkrun Purple</option>
+        <option value="white">White</option>
+        <option value="black">Black</option>
+        <option value="vitalityPink">Vitality Pink</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <input id="infoColor" type="color" value="#2b2441" title="Info custom color" />
+    </div>
   </div>
 
   <div class="hint">
-    Supports: <code>parkrun-logo.svg</code> (recolored) → <code>parkrun-logo.png</code> → <code>parkrun-logo-320.png</code>.<br/>
-    Transparent overlay sticker (1200×628). Live updates while typing.
+    Files supported (same folder): <code>parkrun-logo.svg</code> → <code>parkrun-logo.png</code> → <code>parkrun-logo-320.png</code>.<br/>
+    SVG recolors perfectly. PNGs will be tinted for the logo color.
   </div>
 
   <div class="small" id="status"></div>
@@ -48,42 +73,70 @@
     const CANVAS_H = 628;
     const DISTANCE_KM = 5;
 
-    // Compact tuning (closer to your preferred “AI compact” PNG)
+    // Layout tuned: bring time/distance closer + more balanced left/right
     const LAYOUT = {
       logoTopY: 86,
       logoTargetW: 560,
       afterLogoGapY: 26,
+
       labelsFontPx: 26,
       labelsOpacity: 0.85,
       valuesFontPx: 76,
-      gapFromCenterX: 205,
       labelsToValuesY: 60,
+
+      // Was 205. Tighten further + keep symmetry.
+      gapFromCenterX: 170,
+
       dividerWidth: 5,
       dividerOpacity: 0.28,
       dividerTopPad: 14,
       dividerBottomPad: 22
     };
 
-    const THEMES = {
-      parkrunPurple: { ink: "#2b2441" },
-      white: { ink: "#ffffff" },
-      black: { ink: "#111111" },
-      vitalityPink: { ink: "#e6007e" }
+    const PRESETS = {
+      parkrunPurple: "#2b2441",
+      white: "#ffffff",
+      black: "#111111",
+      vitalityPink: "#e6007e"
     };
 
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     const timeInput = document.getElementById("timeInput");
-    const themeSelect = document.getElementById("themeSelect");
     const btnDownload = document.getElementById("btnDownload");
     const statusEl = document.getElementById("status");
+
+    const logoPreset = document.getElementById("logoPreset");
+    const infoPreset = document.getElementById("infoPreset");
+    const logoColor = document.getElementById("logoColor");
+    const infoColor = document.getElementById("infoColor");
 
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
 
     function setStatus(msg) { statusEl.textContent = msg; }
-    function getInk() { return (THEMES[themeSelect.value] || THEMES.parkrunPurple).ink; }
-    function getTimeText() { const v = (timeInput.value || "").trim(); return v.length > 0 ? v : "00m 00s"; }
+
+    function getTimeText() {
+      const v = (timeInput.value || "").trim();
+      return v.length > 0 ? v : "00m 00s";
+    }
+
+    function resolveColor(presetEl, colorEl) {
+      const key = presetEl.value;
+      if (key === "custom") return colorEl.value;
+      return PRESETS[key] || colorEl.value;
+    }
+
+    function getLogoInk() { return resolveColor(logoPreset, logoColor); }
+    function getInfoInk() { return resolveColor(infoPreset, infoColor); }
+
+    // Keep picker synced when preset selected
+    function syncPickerFromPreset(presetEl, colorEl) {
+      const key = presetEl.value;
+      if (key !== "custom" && PRESETS[key]) {
+        colorEl.value = PRESETS[key];
+      }
+    }
 
     // ---- Logo state ----
     const logoImg = new Image();
@@ -101,16 +154,11 @@
     function recolorSvgToInk(svgText, ink) {
       let s = svgText;
 
-      // Force fills/strokes & styles
       s = s.replace(/fill="[^"]*"/gi, `fill="${ink}"`);
       s = s.replace(/stroke="[^"]*"/gi, `stroke="${ink}"`);
       s = s.replace(/fill\s*:\s*[^;"]+/gi, `fill:${ink}`);
       s = s.replace(/stroke\s*:\s*[^;"]+/gi, `stroke:${ink}`);
-
-      // Remove gradient/pattern fills to solid
       s = s.replace(/fill="url\(#.+?\)"/gi, `fill="${ink}"`);
-
-      // Gradient stops too
       s = s.replace(/stop-color\s*:\s*[^;"]+/gi, `stop-color:${ink}`);
       s = s.replace(/stop-color="[^"]*"/gi, `stop-color="${ink}"`);
 
@@ -152,30 +200,29 @@
     }
 
     async function ensureLogoLoaded() {
-      const ink = getInk();
+      const logoInk = getLogoInk();
 
-      // 1) SVG recolor
-      try { await loadSvgRecolored("parkrun-logo.svg", ink); return; } catch {}
+      // 1) SVG recolor (best)
+      try { await loadSvgRecolored("parkrun-logo.svg", logoInk); return; } catch {}
 
-      // 2) SVG direct (if recolor pipeline fails)
+      // 2) SVG direct (shows something if recolor pipeline fails)
       try { await loadDirect("parkrun-logo.svg", "svg-direct"); return; } catch {}
 
       // 3) PNG hi-res
       try { await loadDirect("parkrun-logo.png", "png"); return; } catch {}
 
-      // 4) PNG old square fallback
+      // 4) PNG old square
       try { await loadDirect("parkrun-logo-320.png", "png"); return; } catch {}
 
       logoReady = false;
       logoMode = "none";
-      setStatus("Logo: not found (add parkrun-logo.svg or parkrun-logo.png)");
+      setStatus("Logo: not found");
     }
 
-    // ---- Robust crop: rasterize to temp canvas FIRST (fixes SVG width/height=0) ----
+    // Rasterize to temp canvas, crop, then draw centered (robust for SVGs)
     function drawLogoRasterCropCentered(_ctx, img, centerX, topY, targetW, tintColorOrNull) {
-      // Rasterize at a known size so SVGs always have pixels to inspect
       const rasterW = 1600;
-      const rasterH = 800;
+      const rasterH = 900;
 
       const t = document.createElement("canvas");
       t.width = rasterW;
@@ -184,7 +231,6 @@
 
       tctx.clearRect(0, 0, rasterW, rasterH);
 
-      // Draw image scaled into raster canvas, preserving aspect by "contain"
       const srcW = img.naturalWidth || img.width || 1;
       const srcH = img.naturalHeight || img.height || 1;
 
@@ -196,7 +242,6 @@
 
       tctx.drawImage(img, drawX, drawY, drawW, drawH);
 
-      // Optional tint for PNG exports in non-purple themes
       if (tintColorOrNull) {
         tctx.globalCompositeOperation = "source-in";
         tctx.fillStyle = tintColorOrNull;
@@ -204,7 +249,6 @@
         tctx.globalCompositeOperation = "source-over";
       }
 
-      // Now find non-transparent bounds
       let minX = rasterW, minY = rasterH, maxX = -1, maxY = -1;
 
       try {
@@ -222,8 +266,7 @@
             }
           }
         }
-      } catch (e) {
-        // If pixel read fails, just draw without crop
+      } catch {
         const fallbackH = targetW * (drawH / drawW);
         _ctx.drawImage(t, centerX - targetW / 2, topY, targetW, fallbackH);
         return fallbackH;
@@ -252,16 +295,18 @@
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const ink = getInk();
+      const logoInk = getLogoInk();
+      const infoInk = getInfoInk();
       const centerX = canvas.width / 2;
 
       let logoH = 0;
 
       if (logoReady) {
-        const shouldTintPng = (logoMode === "png" && themeSelect.value !== "parkrunPurple");
-        logoH = drawLogoRasterCropCentered(ctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW, shouldTintPng ? ink : null);
+        // If we fell back to PNG and logo ink is not the original, tint it
+        const shouldTint = (logoMode === "png" && logoInk.toLowerCase() !== PRESETS.parkrunPurple);
+        logoH = drawLogoRasterCropCentered(ctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW, shouldTint ? logoInk : null);
       } else {
-        ctx.fillStyle = ink;
+        ctx.fillStyle = logoInk;
         ctx.textAlign = "center";
         ctx.font = "700 96px system-ui, -apple-system, Segoe UI, Roboto, Arial";
         ctx.fillText("parkrun", centerX, LAYOUT.logoTopY + 110);
@@ -270,9 +315,11 @@
 
       const labelsY = LAYOUT.logoTopY + logoH + LAYOUT.afterLogoGapY;
       const valuesY = labelsY + LAYOUT.labelsToValuesY;
+
+      // Balanced close-to-center blocks
       const gapX = LAYOUT.gapFromCenterX;
 
-      ctx.fillStyle = ink;
+      ctx.fillStyle = infoInk;
       ctx.textAlign = "center";
 
       ctx.globalAlpha = LAYOUT.labelsOpacity;
@@ -286,7 +333,7 @@
       ctx.fillText(`${DISTANCE_KM} km`, centerX + gapX, valuesY);
 
       ctx.globalAlpha = LAYOUT.dividerOpacity;
-      ctx.strokeStyle = ink;
+      ctx.strokeStyle = infoInk;
       ctx.lineWidth = LAYOUT.dividerWidth;
       ctx.beginPath();
       ctx.moveTo(centerX, labelsY - LAYOUT.dividerTopPad);
@@ -297,23 +344,42 @@
 
     function download() {
       const a = document.createElement("a");
-      a.download = `parkrun-overlay-${themeSelect.value}.png`;
+      a.download = `parkrun-overlay-logo_${logoPreset.value}-info_${infoPreset.value}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
     }
 
+    // Events
     timeInput.addEventListener("input", render);
 
-    themeSelect.addEventListener("change", async () => {
-      await ensureLogoLoaded(); // reload recolored svg for new theme
+    logoPreset.addEventListener("change", async () => {
+      syncPickerFromPreset(logoPreset, logoColor);
+      await ensureLogoLoaded(); // reload recolored svg if used
+      render();
+    });
+
+    infoPreset.addEventListener("change", () => {
+      syncPickerFromPreset(infoPreset, infoColor);
+      render();
+    });
+
+    logoColor.addEventListener("input", async () => {
+      logoPreset.value = "custom";
+      await ensureLogoLoaded();
+      render();
+    });
+
+    infoColor.addEventListener("input", () => {
+      infoPreset.value = "custom";
       render();
     });
 
     btnDownload.addEventListener("click", download);
 
-    // Init
+    // Init defaults
     timeInput.value = "";
-    render();
+    syncPickerFromPreset(logoPreset, logoColor);
+    syncPickerFromPreset(infoPreset, infoColor);
 
     (async () => {
       await ensureLogoLoaded();
