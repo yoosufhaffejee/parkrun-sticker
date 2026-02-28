@@ -1,126 +1,330 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>parkrun Overlay Generator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>parkrun Overlay Generator</title>
 
-<style>
-body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  margin: 40px;
-  background: #f4f4f4;
-}
+  <style>
+    :root {
+      --bg: #f4f4f4;
+      --text: #111;
+      --muted: #666;
+      --border: #d7d7d7;
+      --purple: #2b2441; /* parkrun deep purple vibe */
+    }
 
-input, button {
-  padding: 10px 14px;
-  font-size: 16px;
-}
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 32px;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-button { cursor: pointer; }
+    h2 { margin: 0 0 16px; }
 
-canvas {
-  margin-top: 30px;
-  border: 1px dashed #ccc;
-  max-width: 100%;
-}
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 12px;
+    }
 
-.row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-</style>
+    input, button, select {
+      padding: 10px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    input { min-width: 320px; }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    button.primary {
+      border-color: #b9b9b9;
+      font-weight: 600;
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    canvas {
+      margin-top: 18px;
+      border: 1px dashed #c9c9c9;
+      border-radius: 12px;
+      background: transparent;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    code {
+      background: rgba(0,0,0,0.05);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+  </style>
 </head>
+
 <body>
+  <h2>parkrun Overlay Generator</h2>
 
-<h2>parkrun Overlay Generator</h2>
+  <div class="row">
+    <input id="timeInput" placeholder="Time (e.g. 32m 21s)" />
+    <button class="primary" id="btnGenerate">Generate</button>
+    <button id="btnDownload" disabled>Download PNG</button>
+  </div>
 
-<div class="row">
-  <input id="timeInput" placeholder="Enter time (e.g. 32m 21s or 32:21)" />
-  <button onclick="generate()">Generate</button>
-  <button onclick="download()">Download PNG</button>
-</div>
+  <div class="row">
+    <label class="small">
+      Output:
+      <select id="sizeSelect">
+        <option value="1200x628">1200 × 628 (overlay sticker)</option>
+        <option value="1080x1920">1080 × 1920 (Instagram Story)</option>
+      </select>
+    </label>
 
-<canvas id="canvas" width="1200" height="628"></canvas>
+    <label class="small">
+      Logo file:
+      <input id="logoInput" type="file" accept="image/png" />
+    </label>
+  </div>
 
-<script>
-const purple = "#2b2441";
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+  <div class="hint">
+    ✅ Transparent output PNG (no background).<br />
+    Put <code>parkrun-logo.png</code> next to this file <em>or</em> upload it using the logo picker above.<br />
+    The app auto-crops transparent padding from the logo so it won’t overlap your TIME/DISTANCE.
+  </div>
 
-// Load real logo PNG
-const logo = new Image();
-logo.src = "parkrun-logo.png"; // make sure this file exists
+  <canvas id="canvas" width="1200" height="628"></canvas>
 
-function draw(timeText) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  <script>
+    const PURPLE = "#2b2441";
+    const DISTANCE_KM = 5;
 
-  const centerX = canvas.width / 2;
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-  // Draw logo centered
-  const logoWidth = 420;
-  const logoHeight = logoWidth * (logo.height / logo.width);
-  ctx.drawImage(
-    logo,
-    centerX - logoWidth / 2,
-    120,
-    logoWidth,
-    logoHeight
-  );
+    const timeInput = document.getElementById("timeInput");
+    const btnGenerate = document.getElementById("btnGenerate");
+    const btnDownload = document.getElementById("btnDownload");
+    const sizeSelect = document.getElementById("sizeSelect");
+    const logoInput = document.getElementById("logoInput");
 
-  const labelY = 380;
-  const valueY = 470;
-  const gap = 260;
+    // Logo image (can be loaded from file picker or fallback file)
+    const logo = new Image();
+    logo.crossOrigin = "anonymous";
+    let logoReady = false;
 
-  ctx.fillStyle = purple;
-  ctx.textAlign = "center";
+    // Try default logo file in same folder:
+    logo.src = "parkrun-logo.png";
+    logo.onload = () => { logoReady = true; renderPreview(); };
+    logo.onerror = () => { logoReady = false; renderPreview(); };
 
-  // Labels
-  ctx.font = "700 32px system-ui";
-  ctx.globalAlpha = 0.85;
-  ctx.fillText("TIME", centerX - gap, labelY);
-  ctx.fillText("DISTANCE", centerX + gap, labelY);
+    // --- Utility: auto-crop transparent padding from a PNG and draw centered ---
+    function drawLogoCenteredCropped(_ctx, img, centerX, topY, targetWidth) {
+      // Create temp canvas to inspect alpha channel
+      const t = document.createElement("canvas");
+      const tctx = t.getContext("2d", { willReadFrequently: true });
 
-  ctx.globalAlpha = 1;
+      t.width = img.width;
+      t.height = img.height;
+      tctx.clearRect(0, 0, t.width, t.height);
+      tctx.drawImage(img, 0, 0);
 
-  // Values
-  ctx.font = "800 80px system-ui";
-  ctx.fillText(timeText, centerX - gap, valueY);
-  ctx.fillText("5 km", centerX + gap, valueY);
+      const imageData = tctx.getImageData(0, 0, img.width, img.height);
+      const data = imageData.data;
 
-  // Divider
-  ctx.globalAlpha = 0.35;
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(centerX, labelY - 20);
-  ctx.lineTo(centerX, valueY + 30);
-  ctx.strokeStyle = purple;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-}
+      let minX = img.width, minY = img.height, maxX = -1, maxY = -1;
 
-function generate() {
-  const time = document.getElementById("timeInput").value.trim();
-  if (!time) {
-    alert("Enter a time first");
-    return;
-  }
-  draw(time);
-}
+      for (let y = 0; y < img.height; y++) {
+        for (let x = 0; x < img.width; x++) {
+          const a = data[(y * img.width + x) * 4 + 3];
+          if (a > 0) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
 
-function download() {
-  const link = document.createElement("a");
-  link.download = "parkrun-overlay.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
+      // If image is fully transparent (shouldn't happen), just bail
+      if (maxX < 0 || maxY < 0) {
+        return 0;
+      }
 
-// Ensure logo loads before first render
-logo.onload = () => {
-  draw("32m 21s");
-};
-</script>
+      const croppedW = (maxX - minX) + 1;
+      const croppedH = (maxY - minY) + 1;
 
+      const scale = targetWidth / croppedW;
+      const drawH = croppedH * scale;
+
+      _ctx.drawImage(
+        img,
+        minX, minY, croppedW, croppedH,
+        centerX - targetWidth / 2,
+        topY,
+        targetWidth,
+        drawH
+      );
+
+      return drawH;
+    }
+
+    function setCanvasSizeFromSelect() {
+      const val = sizeSelect.value;
+      const [w, h] = val.split("x").map(Number);
+
+      canvas.width = w;
+      canvas.height = h;
+
+      // Keep display size reasonable on page:
+      canvas.style.width = Math.min(900, w) + "px";
+    }
+
+    function clear() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawOverlay(timeText) {
+      clear();
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      const centerX = w / 2;
+
+      // Layout scaling based on canvas height
+      const isStory = (w === 1080 && h === 1920);
+
+      // Anchor area: center-ish for story, normal for sticker
+      const topY = isStory ? Math.round(h * 0.28) : 90;
+
+      // Logo target width (responsive)
+      const logoTargetW = isStory ? 560 : 520;
+
+      // Draw logo if available, else fallback text
+      ctx.fillStyle = PURPLE;
+      ctx.textAlign = "center";
+
+      let logoDrawH = 0;
+      if (logoReady) {
+        logoDrawH = drawLogoCenteredCropped(ctx, logo, centerX, topY, logoTargetW);
+      } else {
+        // Fallback wordmark (if logo missing)
+        ctx.font = "bold 110px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        ctx.fillText("parkrun", centerX, topY + 120);
+        logoDrawH = 140;
+      }
+
+      // Dynamic spacing to prevent overlap
+      const labelsY = topY + logoDrawH + (isStory ? 90 : 80);
+      const valuesY = labelsY + (isStory ? 110 : 95);
+
+      const gap = isStory ? 250 : 260;
+
+      // Labels
+      ctx.font = `700 ${isStory ? 34 : 32}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+      ctx.globalAlpha = 0.85;
+      ctx.fillText("TIME", centerX - gap, labelsY);
+      ctx.fillText("DISTANCE", centerX + gap, labelsY);
+
+      // Values
+      ctx.globalAlpha = 1;
+      ctx.font = `800 ${isStory ? 86 : 80}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+      ctx.fillText(timeText, centerX - gap, valuesY);
+      ctx.fillText(`${DISTANCE_KM} km`, centerX + gap, valuesY);
+
+      // Divider
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = PURPLE;
+      ctx.lineWidth = isStory ? 7 : 6;
+
+      const dividerTop = labelsY - 26;
+      const dividerBottom = valuesY + 34;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, dividerTop);
+      ctx.lineTo(centerX, dividerBottom);
+      ctx.stroke();
+
+      ctx.globalAlpha = 1;
+    }
+
+    function sanitizeTimeInput(v) {
+      // Keep it simple: trim and allow user to type exactly what they want.
+      // Optional: if they type 32:21, we keep it; if they type 32m 21s, we keep it.
+      return (v || "").trim();
+    }
+
+    function renderPreview() {
+      setCanvasSizeFromSelect();
+      const timeText = sanitizeTimeInput(timeInput.value) || "32m 21s";
+      drawOverlay(timeText);
+      btnDownload.disabled = false;
+    }
+
+    btnGenerate.addEventListener("click", () => {
+      const timeText = sanitizeTimeInput(timeInput.value);
+      if (!timeText) {
+        alert("Enter a time first (e.g. 32m 21s).");
+        return;
+      }
+      renderPreview();
+    });
+
+    sizeSelect.addEventListener("change", () => {
+      renderPreview();
+    });
+
+    btnDownload.addEventListener("click", () => {
+      const a = document.createElement("a");
+      a.download = "parkrun-overlay.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    });
+
+    // Logo upload override
+    logoInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.includes("png")) {
+        alert("Please upload a PNG logo with transparency.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        logoReady = false;
+        logo.onload = () => { logoReady = true; renderPreview(); };
+        logo.onerror = () => { logoReady = false; renderPreview(); };
+        logo.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Initial preview
+    setCanvasSizeFromSelect();
+    timeInput.value = "32m 21s";
+    // If logo isn't ready yet, it will fallback, then redraw when logo loads.
+    renderPreview();
+  </script>
 </body>
 </html>
