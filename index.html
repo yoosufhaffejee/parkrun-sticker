@@ -1,118 +1,126 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>parkrun Overlay Generator</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>parkrun Overlay Generator</title>
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      margin: 40px;
-      background: #f4f4f4;
-    }
+<style>
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  margin: 40px;
+  background: #f4f4f4;
+}
 
-    h2 { margin-bottom: 20px; }
+input, button {
+  padding: 10px 14px;
+  font-size: 16px;
+}
 
-    input, button {
-      padding: 10px 14px;
-      font-size: 16px;
-    }
+button { cursor: pointer; }
 
-    button {
-      cursor: pointer;
-    }
+canvas {
+  margin-top: 30px;
+  border: 1px dashed #ccc;
+  max-width: 100%;
+}
 
-    canvas {
-      margin-top: 30px;
-      border: 1px dashed #ccc;
-      max-width: 100%;
-    }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-  </style>
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+</style>
 </head>
 <body>
 
-  <h2>parkrun Overlay Generator</h2>
+<h2>parkrun Overlay Generator</h2>
 
-  <div class="row">
-    <input id="timeInput" placeholder="Enter time (e.g. 32m 21s or 32:21)" />
-    <button onclick="generate()">Generate</button>
-    <button onclick="download()">Download PNG</button>
-  </div>
+<div class="row">
+  <input id="timeInput" placeholder="Enter time (e.g. 32m 21s or 32:21)" />
+  <button onclick="generate()">Generate</button>
+  <button onclick="download()">Download PNG</button>
+</div>
 
-  <canvas id="canvas" width="1200" height="628"></canvas>
+<canvas id="canvas" width="1200" height="628"></canvas>
 
-  <script>
-    const purple = "#2b2441"; // parkrun deep purple
+<script>
+const purple = "#2b2441";
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+// Load real logo PNG
+const logo = new Image();
+logo.src = "parkrun-logo.png"; // make sure this file exists
 
-    function draw(timeText) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+function draw(timeText) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const centerX = canvas.width / 2;
+  const centerX = canvas.width / 2;
 
-      ctx.fillStyle = purple;
-      ctx.textAlign = "center";
+  // Draw logo centered
+  const logoWidth = 420;
+  const logoHeight = logoWidth * (logo.height / logo.width);
+  ctx.drawImage(
+    logo,
+    centerX - logoWidth / 2,
+    120,
+    logoWidth,
+    logoHeight
+  );
 
-      // parkrun wordmark (text version)
-      ctx.font = "bold 120px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillText("parkrun", centerX, 240);
+  const labelY = 380;
+  const valueY = 470;
+  const gap = 260;
 
-      const labelY = 360;
-      const valueY = 450;
-      const gap = 260;
+  ctx.fillStyle = purple;
+  ctx.textAlign = "center";
 
-      // Labels
-      ctx.font = "700 32px system-ui";
-      ctx.globalAlpha = 0.85;
-      ctx.fillText("TIME", centerX - gap, labelY);
-      ctx.fillText("DISTANCE", centerX + gap, labelY);
+  // Labels
+  ctx.font = "700 32px system-ui";
+  ctx.globalAlpha = 0.85;
+  ctx.fillText("TIME", centerX - gap, labelY);
+  ctx.fillText("DISTANCE", centerX + gap, labelY);
 
-      ctx.globalAlpha = 1;
+  ctx.globalAlpha = 1;
 
-      // Values
-      ctx.font = "800 80px system-ui";
-      ctx.fillText(timeText, centerX - gap, valueY);
-      ctx.fillText("5 km", centerX + gap, valueY);
+  // Values
+  ctx.font = "800 80px system-ui";
+  ctx.fillText(timeText, centerX - gap, valueY);
+  ctx.fillText("5 km", centerX + gap, valueY);
 
-      // Divider
-      ctx.globalAlpha = 0.35;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(centerX, labelY - 20);
-      ctx.lineTo(centerX, valueY + 30);
-      ctx.strokeStyle = purple;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
+  // Divider
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(centerX, labelY - 20);
+  ctx.lineTo(centerX, valueY + 30);
+  ctx.strokeStyle = purple;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
 
-    function generate() {
-      const time = document.getElementById("timeInput").value.trim();
-      if (!time) {
-        alert("Enter a time first");
-        return;
-      }
-      draw(time);
-    }
+function generate() {
+  const time = document.getElementById("timeInput").value.trim();
+  if (!time) {
+    alert("Enter a time first");
+    return;
+  }
+  draw(time);
+}
 
-    function download() {
-      const link = document.createElement("a");
-      link.download = "parkrun-overlay.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    }
+function download() {
+  const link = document.createElement("a");
+  link.download = "parkrun-overlay.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
 
-    // Initial preview
-    draw("32m 21s");
-  </script>
+// Ensure logo loads before first render
+logo.onload = () => {
+  draw("32m 21s");
+};
+</script>
 
 </body>
 </html>
