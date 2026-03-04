@@ -6,175 +6,450 @@
   <title>parkrun Overlay Sticker</title>
 
   <style>
-    :root { --ui-bg:#f4f4f4; --ui-border:#d7d7d7; --ui-text:#111; --ui-muted:#666; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 28px; background: var(--ui-bg); color: var(--ui-text); }
-    h2 { margin: 0 0 12px; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:12px; }
-    input, button, select { padding:10px 12px; font-size:16px; border-radius:12px; border:1px solid var(--ui-border); background:#fff; }
-    input[type="color"] { padding: 0; width: 44px; height: 44px; border-radius: 12px; }
-    input[type="text"] { min-width: 240px; }
-    button { cursor:pointer; font-weight:600; }
-    .hint { margin-top:10px; font-size:13px; color: var(--ui-muted); line-height:1.45; }
-    .small { margin-top:8px; font-size:12px; color: var(--ui-muted); }
-    canvas { margin-top:16px; border:1px dashed #c9c9c9; border-radius:12px; background:transparent; max-width:100%; height:auto; }
-    code { background: rgba(0,0,0,0.06); padding:2px 6px; border-radius:8px; }
-    .group { display:flex; align-items:center; gap:10px; }
-    .groupLabel { font-size: 13px; color: var(--ui-muted); width: 80px; }
-    .pill { font-size: 12px; color: var(--ui-muted); padding: 6px 10px; border: 1px solid var(--ui-border); border-radius: 999px; background:#fff; }
+    :root {
+      --ui-bg: #eef1f7;
+      --panel: #ffffff;
+      --panel-border: #d6dced;
+      --ui-text: #181d2a;
+      --ui-muted: #66738a;
+      --chip: #f5f7fc;
+      --chip-active: #2b2441;
+      --chip-active-text: #ffffff;
+      --focus: #7f5cff;
+      --shadow: 0 14px 30px rgba(20, 28, 48, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: radial-gradient(circle at 100% 0%, #f9f8ff 0%, var(--ui-bg) 45%, #edf2f8 100%);
+      color: var(--ui-text);
+    }
+
+    .app {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .preview-panel {
+      position: sticky;
+      top: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .sub {
+      margin: 0 0 14px;
+      color: var(--ui-muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--ui-muted);
+    }
+
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ui-text);
+      padding: 10px 12px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus, select:focus, button:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(127, 92, 255, 0.16);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      width: auto;
+      border-radius: 999px;
+      background: var(--chip);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border: 1px solid var(--panel-border);
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--chip-active);
+      color: var(--chip-active-text);
+      border-color: transparent;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      background: #fbfcff;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 7px 9px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check input { width: auto; margin: 0; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .btn-primary {
+      font-weight: 800;
+      cursor: pointer;
+      background: #2b2441;
+      border-color: #2b2441;
+      color: #fff;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 18px;
+      font-size: 12px;
+      color: var(--ui-muted);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 18px;
+      border: 1px dashed #cad3e5;
+      background: transparent;
+    }
+
+    .hint {
+      margin-top: 10px;
+      color: var(--ui-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 12px; }
+      .app { grid-template-columns: 1fr; }
+      .preview-panel { position: static; order: -1; }
+      .panel { border-radius: 16px; }
+    }
+
+    @media (max-width: 560px) {
+      .grid-2, .stats-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 21px; }
+      input, select, button { font-size: 16px; }
+    }
   </style>
 </head>
 
 <body>
-  <h2>parkrun Overlay Sticker</h2>
+  <div class="app">
+    <section class="panel">
+      <h1>parkrun Sticker Builder</h1>
+      <p class="sub">Built for IG overlays: compact pill stats, transparent export, and flexible layouts for square, portrait, or horizontal posts.</p>
 
-  <div class="row">
-    <input id="timeInput" type="text" placeholder="Time (e.g. 32m 21s or 32:21)" />
-    <button id="btnDownload">Download PNG</button>
-    <span class="pill">Distance fixed: 5 km</span>
+      <div class="field">
+        <label for="layoutPreset">Sticker layout</label>
+        <select id="layoutPreset">
+          <option value="square" selected>Square (1080 × 1080)</option>
+          <option value="portrait">Portrait (1080 × 1350)</option>
+          <option value="horizontal">Horizontal (1080 × 608)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="timeInput">Finish time (optional)</label>
+        <input id="timeInput" type="text" placeholder="e.g. 32:21 or 32m 21s" />
+      </div>
+
+      <div class="field grid-2">
+        <div>
+          <label for="achievementInput">Achievement</label>
+          <input id="achievementInput" type="text" placeholder="Completed" />
+        </div>
+        <div>
+          <label for="streakInput">Streak / consistency</label>
+          <input id="streakInput" type="text" placeholder="5 in a row" />
+        </div>
+      </div>
+
+      <div class="field grid-2">
+        <div>
+          <label for="milestoneInput">Milestone progress</label>
+          <input id="milestoneInput" type="text" placeholder="Run #24 (1 to milestone)" />
+        </div>
+        <div>
+          <label for="storyInput">Story / note</label>
+          <input id="storyInput" type="text" placeholder="Tourist stop #7" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Presets</label>
+        <div class="chips" id="presetChips">
+          <button class="chip active" data-preset="performance" type="button">Performance</button>
+          <button class="chip" data-preset="progress" type="button">Progress</button>
+          <button class="chip" data-preset="story" type="button">Story</button>
+          <button class="chip" data-preset="privacy" type="button">Privacy-first</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Show on sticker (max 3 stats)</label>
+        <div class="stats-grid">
+          <label class="check"><input type="checkbox" id="showTime" checked /> Time</label>
+          <label class="check"><input type="checkbox" id="showDistance" checked /> Distance</label>
+          <label class="check"><input type="checkbox" id="showSpeedRange" checked /> Min / max speed</label>
+          <label class="check"><input type="checkbox" id="showAchievement" /> Achievement</label>
+          <label class="check"><input type="checkbox" id="showStreak" /> Streak</label>
+          <label class="check"><input type="checkbox" id="showMilestone" /> Milestone</label>
+          <label class="check"><input type="checkbox" id="showStory" /> Story note</label>
+        </div>
+      </div>
+
+      <div class="field grid-2">
+        <div>
+          <label for="logoPreset">Logo color</label>
+          <select id="logoPreset">
+            <option value="parkrunPurple" selected>parkrun Purple</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+            <option value="vitalityPink">Vitality Pink</option>
+          </select>
+        </div>
+        <div>
+          <label for="infoPreset">Pill text color</label>
+          <select id="infoPreset">
+            <option value="parkrunPurple" selected>parkrun Purple</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+            <option value="vitalityPink">Vitality Pink</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn-primary" id="btnDownload" type="button">Download PNG</button>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="hint">Transparent PNG output. Supported logo files: <code>parkrun-logo.svg</code> → <code>parkrun-logo.png</code> → <code>parkrun-logo-320.png</code>.</div>
+    </section>
+
+    <section class="panel preview-panel">
+      <canvas id="canvas" width="1080" height="1080"></canvas>
+    </section>
   </div>
-
-  <div class="row">
-    <div class="group">
-      <span class="groupLabel">Logo</span>
-      <select id="logoPreset">
-        <option value="parkrunPurple" selected>parkrun Purple</option>
-        <option value="white">White</option>
-        <option value="black">Black</option>
-        <option value="vitalityPink">Vitality Pink</option>
-        <option value="custom">Custom…</option>
-      </select>
-      <input id="logoColor" type="color" value="#2b2441" title="Logo custom color" />
-    </div>
-
-    <div class="group">
-      <span class="groupLabel">Info</span>
-      <select id="infoPreset">
-        <option value="parkrunPurple" selected>parkrun Purple</option>
-        <option value="white">White</option>
-        <option value="black">Black</option>
-        <option value="vitalityPink">Vitality Pink</option>
-        <option value="custom">Custom…</option>
-      </select>
-      <input id="infoColor" type="color" value="#2b2441" title="Info custom color" />
-    </div>
-  </div>
-
-  <div class="hint">
-    Files supported (same folder): <code>parkrun-logo.svg</code> → <code>parkrun-logo.png</code> → <code>parkrun-logo-320.png</code>.<br/>
-    SVG recolors perfectly. PNGs will be tinted for the logo color.
-  </div>
-
-  <div class="small" id="status"></div>
-
-  <canvas id="canvas" width="1200" height="628"></canvas>
 
   <script>
-    const CANVAS_W = 1200;
-    const CANVAS_H = 628;
     const DISTANCE_KM = 5;
-
-    // Layout tuned: bring time/distance closer + more balanced left/right
-    const LAYOUT = {
-      logoTopY: 86,
-      logoTargetW: 560,
-      afterLogoGapY: 26,
-
-      labelsFontPx: 26,
-      labelsOpacity: 0.85,
-      valuesFontPx: 76,
-      labelsToValuesY: 60,
-
-      // Was 205. Tighten further + keep symmetry.
-      gapFromCenterX: 170,
-
-      dividerWidth: 5,
-      dividerOpacity: 0.28,
-      dividerTopPad: 14,
-      dividerBottomPad: 22
-    };
+    const MAX_STATS = 3;
 
     const PRESETS = {
-      parkrunPurple: "#2b2441",
-      white: "#ffffff",
-      black: "#111111",
-      vitalityPink: "#e6007e"
+      parkrunPurple: '#2b2441',
+      white: '#ffffff',
+      black: '#111111',
+      vitalityPink: '#e6007e'
     };
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const timeInput = document.getElementById("timeInput");
-    const btnDownload = document.getElementById("btnDownload");
-    const statusEl = document.getElementById("status");
+    const LAYOUTS = {
+      square: { width: 1080, height: 1080, logoWidth: 640, topPad: 86, overlap: 6, maxPerRow: 2 },
+      portrait: { width: 1080, height: 1350, logoWidth: 680, topPad: 110, overlap: 0, maxPerRow: 2 },
+      horizontal: { width: 1080, height: 608, logoWidth: 520, topPad: 56, overlap: 22, maxPerRow: 3 }
+    };
 
-    const logoPreset = document.getElementById("logoPreset");
-    const infoPreset = document.getElementById("infoPreset");
-    const logoColor = document.getElementById("logoColor");
-    const infoColor = document.getElementById("infoColor");
+    const PRESET_STATS = {
+      performance: ['time', 'distance', 'speedRange'],
+      progress: ['achievement', 'streak', 'milestone'],
+      story: ['achievement', 'story', 'distance'],
+      privacy: ['speedRange', 'achievement', 'milestone']
+    };
 
-    canvas.width = CANVAS_W;
-    canvas.height = CANVAS_H;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-    function setStatus(msg) { statusEl.textContent = msg; }
+    const statusEl = document.getElementById('status');
+    const layoutPreset = document.getElementById('layoutPreset');
+    const timeInput = document.getElementById('timeInput');
+    const achievementInput = document.getElementById('achievementInput');
+    const streakInput = document.getElementById('streakInput');
+    const milestoneInput = document.getElementById('milestoneInput');
+    const storyInput = document.getElementById('storyInput');
+    const logoPreset = document.getElementById('logoPreset');
+    const infoPreset = document.getElementById('infoPreset');
+
+    const checks = {
+      time: document.getElementById('showTime'),
+      distance: document.getElementById('showDistance'),
+      speedRange: document.getElementById('showSpeedRange'),
+      achievement: document.getElementById('showAchievement'),
+      streak: document.getElementById('showStreak'),
+      milestone: document.getElementById('showMilestone'),
+      story: document.getElementById('showStory')
+    };
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || '';
+    }
+
+    function parseTimeToSeconds(text) {
+      const raw = (text || '').trim().toLowerCase();
+      if (!raw) return null;
+
+      const colon = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (colon) {
+        if (colon[3]) return Number(colon[1]) * 3600 + Number(colon[2]) * 60 + Number(colon[3]);
+        return Number(colon[1]) * 60 + Number(colon[2]);
+      }
+
+      const m = raw.match(/(\d+)\s*m/);
+      const s = raw.match(/(\d+)\s*s/);
+      if (m || s) return (m ? Number(m[1]) * 60 : 0) + (s ? Number(s[1]) : 0);
+      return null;
+    }
 
     function getTimeText() {
-      const v = (timeInput.value || "").trim();
-      return v.length > 0 ? v : "00m 00s";
+      const v = (timeInput.value || '').trim();
+      return v || 'Hidden';
     }
 
-    function resolveColor(presetEl, colorEl) {
-      const key = presetEl.value;
-      if (key === "custom") return colorEl.value;
-      return PRESETS[key] || colorEl.value;
+    function speedRangeLabel() {
+      const seconds = parseTimeToSeconds(timeInput.value);
+      if (!seconds || seconds <= 0) return 'Set time to estimate';
+
+      const avg = DISTANCE_KM / (seconds / 3600);
+      const variance = 0.45;
+      const min = Math.max(4, avg - variance).toFixed(1);
+      const max = (avg + variance).toFixed(1);
+      return `${min}–${max} km/h`;
     }
 
-    function getLogoInk() { return resolveColor(logoPreset, logoColor); }
-    function getInfoInk() { return resolveColor(infoPreset, infoColor); }
+    function collectStats() {
+      const all = [
+        { key: 'time', label: 'TIME', value: getTimeText() },
+        { key: 'distance', label: 'DISTANCE', value: `${DISTANCE_KM} km` },
+        { key: 'speedRange', label: 'SPEED RANGE', value: speedRangeLabel() },
+        { key: 'achievement', label: 'ACHIEVEMENT', value: achievementInput.value.trim() || 'Completed' },
+        { key: 'streak', label: 'STREAK', value: streakInput.value.trim() || 'Keep showing up' },
+        { key: 'milestone', label: 'MILESTONE', value: milestoneInput.value.trim() || 'One step closer' },
+        { key: 'story', label: 'STORY', value: storyInput.value.trim() || '5K done before 9am' }
+      ];
 
-    // Keep picker synced when preset selected
-    function syncPickerFromPreset(presetEl, colorEl) {
-      const key = presetEl.value;
-      if (key !== "custom" && PRESETS[key]) {
-        colorEl.value = PRESETS[key];
+      const selected = all.filter((item) => checks[item.key].checked).slice(0, MAX_STATS);
+      if (!selected.length) return [{ label: 'DISTANCE', value: `${DISTANCE_KM} km` }];
+      return selected;
+    }
+
+    function applyPreset(presetName) {
+      const enabled = new Set(PRESET_STATS[presetName] || PRESET_STATS.performance);
+      Object.entries(checks).forEach(([key, el]) => {
+        el.checked = enabled.has(key);
+      });
+
+      document.querySelectorAll('#presetChips .chip').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.preset === presetName);
+      });
+
+      setStatus('');
+      render();
+    }
+
+    function enforceMaxStats(changedEl) {
+      const selected = Object.values(checks).filter((el) => el.checked);
+      if (selected.length <= MAX_STATS) {
+        setStatus('');
+        return;
       }
+      changedEl.checked = false;
+      setStatus(`Max ${MAX_STATS} stats to keep pills compact.`);
     }
 
-    // ---- Logo state ----
     const logoImg = new Image();
     let logoReady = false;
-    let logoMode = "none"; // "svg-recolor" | "svg-direct" | "png" | "none"
+    let logoMode = 'none';
     let blobUrl = null;
 
+    function getLogoInk() {
+      return PRESETS[logoPreset.value] || PRESETS.parkrunPurple;
+    }
+
+    function getInfoInk() {
+      return PRESETS[infoPreset.value] || PRESETS.parkrunPurple;
+    }
+
     function revokeBlobUrl() {
-      if (blobUrl && blobUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(blobUrl);
-      }
+      if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
       blobUrl = null;
     }
 
     function recolorSvgToInk(svgText, ink) {
       let s = svgText;
-
       s = s.replace(/fill="[^"]*"/gi, `fill="${ink}"`);
       s = s.replace(/stroke="[^"]*"/gi, `stroke="${ink}"`);
       s = s.replace(/fill\s*:\s*[^;"]+/gi, `fill:${ink}`);
       s = s.replace(/stroke\s*:\s*[^;"]+/gi, `stroke:${ink}`);
-      s = s.replace(/fill="url\(#.+?\)"/gi, `fill="${ink}"`);
-      s = s.replace(/stop-color\s*:\s*[^;"]+/gi, `stop-color:${ink}`);
-      s = s.replace(/stop-color="[^"]*"/gi, `stop-color="${ink}"`);
-
       return s;
     }
 
     async function loadSvgRecolored(url, ink) {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("SVG fetch failed");
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('SVG fetch failed');
       const svgText = await res.text();
-
       const recolored = recolorSvgToInk(svgText, ink);
-      const blob = new Blob([recolored], { type: "image/svg+xml" });
 
       revokeBlobUrl();
-      blobUrl = URL.createObjectURL(blob);
+      blobUrl = URL.createObjectURL(new Blob([recolored], { type: 'image/svg+xml' }));
 
       await new Promise((resolve, reject) => {
         logoReady = false;
@@ -182,83 +457,62 @@
         logoImg.onerror = reject;
         logoImg.src = blobUrl;
       });
-
-      logoMode = "svg-recolor";
-      setStatus(`Logo: ${url} (recolored)`);
+      logoMode = 'svg-recolored';
     }
 
-    async function loadDirect(url, modeLabel) {
+    async function loadDirect(url, mode) {
       await new Promise((resolve, reject) => {
         logoReady = false;
         logoImg.onload = () => { logoReady = true; resolve(); };
         logoImg.onerror = reject;
-        logoImg.src = url;
+        logoImg.src = `${url}?v=${Date.now()}`;
       });
-
-      logoMode = modeLabel;
-      setStatus(`Logo: ${url} (${modeLabel})`);
+      logoMode = mode;
     }
 
     async function ensureLogoLoaded() {
-      const logoInk = getLogoInk();
+      const ink = getLogoInk();
+      revokeBlobUrl();
 
-      // 1) SVG recolor (best)
-      try { await loadSvgRecolored("parkrun-logo.svg", logoInk); return; } catch {}
-
-      // 2) SVG direct (shows something if recolor pipeline fails)
-      try { await loadDirect("parkrun-logo.svg", "svg-direct"); return; } catch {}
-
-      // 3) PNG hi-res
-      try { await loadDirect("parkrun-logo.png", "png"); return; } catch {}
-
-      // 4) PNG old square
-      try { await loadDirect("parkrun-logo-320.png", "png"); return; } catch {}
-
+      try { await loadSvgRecolored('parkrun-logo.svg', ink); return; } catch (_) {}
+      try { await loadDirect('parkrun-logo.svg', 'svg-direct'); return; } catch (_) {}
+      try { await loadDirect('parkrun-logo.png', 'png'); return; } catch (_) {}
+      try { await loadDirect('parkrun-logo-320.png', 'png'); return; } catch (_) {}
       logoReady = false;
-      logoMode = "none";
-      setStatus("Logo: not found");
+      logoMode = 'none';
     }
 
-    // Rasterize to temp canvas, crop, then draw centered (robust for SVGs)
     function drawLogoRasterCropCentered(_ctx, img, centerX, topY, targetW, tintColorOrNull) {
-      const rasterW = 1600;
-      const rasterH = 900;
-
-      const t = document.createElement("canvas");
+      const rasterW = 1400;
+      const rasterH = 780;
+      const t = document.createElement('canvas');
       t.width = rasterW;
       t.height = rasterH;
-      const tctx = t.getContext("2d", { willReadFrequently: true });
-
-      tctx.clearRect(0, 0, rasterW, rasterH);
+      const tctx = t.getContext('2d', { willReadFrequently: true });
 
       const srcW = img.naturalWidth || img.width || 1;
       const srcH = img.naturalHeight || img.height || 1;
-
       const scale = Math.min(rasterW / srcW, rasterH / srcH);
       const drawW = srcW * scale;
       const drawH = srcH * scale;
-      const drawX = (rasterW - drawW) / 2;
-      const drawY = (rasterH - drawH) / 2;
-
-      tctx.drawImage(img, drawX, drawY, drawW, drawH);
+      tctx.drawImage(img, (rasterW - drawW) / 2, (rasterH - drawH) / 2, drawW, drawH);
 
       if (tintColorOrNull) {
-        tctx.globalCompositeOperation = "source-in";
+        tctx.globalCompositeOperation = 'source-in';
         tctx.fillStyle = tintColorOrNull;
         tctx.fillRect(0, 0, rasterW, rasterH);
-        tctx.globalCompositeOperation = "source-over";
+        tctx.globalCompositeOperation = 'source-over';
       }
 
-      let minX = rasterW, minY = rasterH, maxX = -1, maxY = -1;
-
+      let minX = rasterW;
+      let minY = rasterH;
+      let maxX = -1;
+      let maxY = -1;
       try {
-        const imageData = tctx.getImageData(0, 0, rasterW, rasterH);
-        const data = imageData.data;
-
+        const data = tctx.getImageData(0, 0, rasterW, rasterH).data;
         for (let y = 0; y < rasterH; y++) {
           for (let x = 0; x < rasterW; x++) {
-            const a = data[(y * rasterW + x) * 4 + 3];
-            if (a > 0) {
+            if (data[(y * rasterW + x) * 4 + 3] > 0) {
               if (x < minX) minX = x;
               if (y < minY) minY = y;
               if (x > maxX) maxX = x;
@@ -266,125 +520,169 @@
             }
           }
         }
-      } catch {
+      } catch (_) {
         const fallbackH = targetW * (drawH / drawW);
         _ctx.drawImage(t, centerX - targetW / 2, topY, targetW, fallbackH);
         return fallbackH;
       }
 
       if (maxX < 0 || maxY < 0) return 0;
-
-      const croppedW = (maxX - minX) + 1;
-      const croppedH = (maxY - minY) + 1;
-
-      const outScale = targetW / croppedW;
-      const outH = croppedH * outScale;
-
-      _ctx.drawImage(
-        t,
-        minX, minY, croppedW, croppedH,
-        centerX - targetW / 2,
-        topY,
-        targetW,
-        outH
-      );
-
+      const croppedW = maxX - minX + 1;
+      const croppedH = maxY - minY + 1;
+      const outH = croppedH * (targetW / croppedW);
+      _ctx.drawImage(t, minX, minY, croppedW, croppedH, centerX - targetW / 2, topY, targetW, outH);
       return outH;
     }
 
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function roundRect(_ctx, x, y, width, height, radius, fill, stroke) {
+      const r = Math.min(radius, width / 2, height / 2);
+      _ctx.beginPath();
+      _ctx.moveTo(x + r, y);
+      _ctx.arcTo(x + width, y, x + width, y + height, r);
+      _ctx.arcTo(x + width, y + height, x, y + height, r);
+      _ctx.arcTo(x, y + height, x, y, r);
+      _ctx.arcTo(x, y, x + width, y, r);
+      _ctx.closePath();
+      if (fill) _ctx.fill();
+      if (stroke) _ctx.stroke();
+    }
 
-      const logoInk = getLogoInk();
+    function fitText(text, x, y, maxWidth, startSize, minSize) {
+      let size = startSize;
+      while (size > minSize) {
+        ctx.font = `800 ${size}px Inter, system-ui, sans-serif`;
+        if (ctx.measureText(text).width <= maxWidth) break;
+        size -= 1;
+      }
+      ctx.fillText(text, x, y);
+    }
+
+    function drawPill(x, y, w, h, label, value, color) {
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      roundRect(ctx, x, y, w, h, h / 2, true, false);
+
+      ctx.strokeStyle = 'rgba(43,36,65,0.14)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, x, y, w, h, h / 2, false, true);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.75;
+      ctx.font = '700 14px Inter, system-ui, sans-serif';
+      ctx.fillText(label, x + 18, y + 24);
+
+      ctx.globalAlpha = 1;
+      fitText(value, x + 18, y + h - 16, w - 34, 35, 20);
+    }
+
+    function renderPills(stats, layoutName, infoInk, logoBottom, layout) {
+      const gap = 14;
+      const count = stats.length;
+      const maxPerRow = Math.min(layout.maxPerRow, count);
+      const rows = Math.ceil(count / maxPerRow);
+      const perRowPillH = layoutName === 'horizontal' ? 74 : 86;
+      const rowGap = 10;
+
+      const totalHeight = rows * perRowPillH + (rows - 1) * rowGap;
+      let y = logoBottom + 22 - layout.overlap;
+
+      if (y + totalHeight > canvas.height - 20) {
+        y = Math.max(logoBottom + 6, canvas.height - totalHeight - 20);
+      }
+
+      let i = 0;
+      for (let row = 0; row < rows; row += 1) {
+        const remaining = count - i;
+        const rowItems = Math.min(maxPerRow, remaining);
+        const availableW = canvas.width - 72;
+        const idealW = Math.floor((availableW - (rowItems - 1) * gap) / rowItems);
+        const pillW = Math.min(idealW, layoutName === 'horizontal' ? 305 : 420);
+        const rowW = rowItems * pillW + (rowItems - 1) * gap;
+        const startX = Math.floor((canvas.width - rowW) / 2);
+
+        for (let col = 0; col < rowItems; col += 1) {
+          const pillX = startX + col * (pillW + gap);
+          drawPill(pillX, y + row * (perRowPillH + rowGap), pillW, perRowPillH, stats[i].label, stats[i].value, infoInk);
+          i += 1;
+        }
+      }
+    }
+
+    function render() {
+      const layoutName = layoutPreset.value;
+      const layout = LAYOUTS[layoutName] || LAYOUTS.square;
+      canvas.width = layout.width;
+      canvas.height = layout.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const infoInk = getInfoInk();
+      const logoInk = getLogoInk();
       const centerX = canvas.width / 2;
 
       let logoH = 0;
-
       if (logoReady) {
-        // If we fell back to PNG and logo ink is not the original, tint it
-        const shouldTint = (logoMode === "png" && logoInk.toLowerCase() !== PRESETS.parkrunPurple);
-        logoH = drawLogoRasterCropCentered(ctx, logoImg, centerX, LAYOUT.logoTopY, LAYOUT.logoTargetW, shouldTint ? logoInk : null);
+        const shouldTint = logoMode === 'png' && logoInk.toLowerCase() !== PRESETS.parkrunPurple;
+        logoH = drawLogoRasterCropCentered(ctx, logoImg, centerX, layout.topPad, layout.logoWidth, shouldTint ? logoInk : null);
       } else {
         ctx.fillStyle = logoInk;
-        ctx.textAlign = "center";
-        ctx.font = "700 96px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-        ctx.fillText("parkrun", centerX, LAYOUT.logoTopY + 110);
-        logoH = 130;
+        ctx.textAlign = 'center';
+        ctx.font = '700 90px Inter, system-ui, sans-serif';
+        ctx.fillText('parkrun', centerX, layout.topPad + 90);
+        logoH = 120;
       }
 
-      const labelsY = LAYOUT.logoTopY + logoH + LAYOUT.afterLogoGapY;
-      const valuesY = labelsY + LAYOUT.labelsToValuesY;
-
-      // Balanced close-to-center blocks
-      const gapX = LAYOUT.gapFromCenterX;
-
-      ctx.fillStyle = infoInk;
-      ctx.textAlign = "center";
-
-      ctx.globalAlpha = LAYOUT.labelsOpacity;
-      ctx.font = `700 ${LAYOUT.labelsFontPx}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-      ctx.fillText("TIME", centerX - gapX, labelsY);
-      ctx.fillText("DISTANCE", centerX + gapX, labelsY);
-
-      ctx.globalAlpha = 1;
-      ctx.font = `800 ${LAYOUT.valuesFontPx}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-      ctx.fillText(getTimeText(), centerX - gapX, valuesY);
-      ctx.fillText(`${DISTANCE_KM} km`, centerX + gapX, valuesY);
-
-      ctx.globalAlpha = LAYOUT.dividerOpacity;
-      ctx.strokeStyle = infoInk;
-      ctx.lineWidth = LAYOUT.dividerWidth;
-      ctx.beginPath();
-      ctx.moveTo(centerX, labelsY - LAYOUT.dividerTopPad);
-      ctx.lineTo(centerX, valuesY + LAYOUT.dividerBottomPad);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+      const stats = collectStats();
+      const logoBottom = layout.topPad + logoH;
+      renderPills(stats, layoutName, infoInk, logoBottom, layout);
     }
 
     function download() {
-      const a = document.createElement("a");
-      a.download = `parkrun-overlay-logo_${logoPreset.value}-info_${infoPreset.value}.png`;
-      a.href = canvas.toDataURL("image/png");
+      const a = document.createElement('a');
+      a.download = `parkrun-sticker-${layoutPreset.value}-${Date.now()}.png`;
+      a.href = canvas.toDataURL('image/png');
       a.click();
     }
 
-    // Events
-    timeInput.addEventListener("input", render);
+    function bindLiveInputs() {
+      [timeInput, achievementInput, streakInput, milestoneInput, storyInput].forEach((el) => {
+        el.addEventListener('input', render);
+      });
 
-    logoPreset.addEventListener("change", async () => {
-      syncPickerFromPreset(logoPreset, logoColor);
-      await ensureLogoLoaded(); // reload recolored svg if used
-      render();
-    });
+      layoutPreset.addEventListener('change', render);
 
-    infoPreset.addEventListener("change", () => {
-      syncPickerFromPreset(infoPreset, infoColor);
-      render();
-    });
+      Object.values(checks).forEach((el) => {
+        el.addEventListener('change', () => {
+          enforceMaxStats(el);
+          render();
+        });
+      });
 
-    logoColor.addEventListener("input", async () => {
-      logoPreset.value = "custom";
+      logoPreset.addEventListener('change', async () => {
+        await ensureLogoLoaded();
+        render();
+      });
+
+      infoPreset.addEventListener('change', render);
+      document.getElementById('btnDownload').addEventListener('click', download);
+
+      document.querySelectorAll('#presetChips .chip').forEach((chip) => {
+        chip.addEventListener('click', () => applyPreset(chip.dataset.preset));
+      });
+    }
+
+    async function init() {
+      achievementInput.value = 'Completed';
+      streakInput.value = '5 in a row';
+      milestoneInput.value = 'Run #24 (1 to milestone)';
+      storyInput.value = 'Tourist stop #7';
+
+      bindLiveInputs();
       await ensureLogoLoaded();
+      applyPreset('performance');
       render();
-    });
+    }
 
-    infoColor.addEventListener("input", () => {
-      infoPreset.value = "custom";
-      render();
-    });
-
-    btnDownload.addEventListener("click", download);
-
-    // Init defaults
-    timeInput.value = "";
-    syncPickerFromPreset(logoPreset, logoColor);
-    syncPickerFromPreset(infoPreset, infoColor);
-
-    (async () => {
-      await ensureLogoLoaded();
-      render();
-    })();
+    init();
   </script>
 </body>
 </html>
