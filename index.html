@@ -3,7 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>parkrun Sticker Builder</title>
+  
+  <!-- Primary Meta Tags -->
+  <title>Parkrun Stats Overlay | Free Instagram Story Overlays & Stats</title>
+  <meta name="title" content="Parkrun Stats Overlay | Free Instagram Story Overlays & Stats" />
+  <meta name="description" content="Create beautiful, customizable, and transparent parkrun stat stickers for your Instagram stories and social media. Free tool for 5k and Junior Parkrun overlays." />
+  <meta name="keywords" content="Parkrun overlay, Parkrun overlay, Parkrun stats, instagram story overlay, 5k run tracker, Junior Parkrun, Parkrun generator, strava alternative overlay, running stats" />
+  <meta name="author" content="Parkrun Stats Overlay" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="English" />
+  <link rel="canonical" href="https://yoosufhaffejee.github.io/parkrun-sticker/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yoosufhaffejee.github.io/parkrun-sticker/" />
+  <meta property="og:title" content="Parkrun Stats Overlay | Free Instagram Story Overlays" />
+  <meta property="og:description" content="Generate beautiful, transparent parkrun stat stickers for your Instagram stories and social media. Free and easy to use for 5k and 2k." />
+  <meta property="og:image" content="https://yoosufhaffejee.github.io/parkrun-sticker/docs/screenshot.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://yoosufhaffejee.github.io/parkrun-sticker/" />
+  <meta property="twitter:title" content="Parkrun Stats Overlay | Free Instagram Story Overlays" />
+  <meta property="twitter:description" content="Generate beautiful, transparent parkrun stat stickers for your Instagram stories and social media. Free and easy to use." />
+  <meta property="twitter:image" content="https://yoosufhaffejee.github.io/parkrun-sticker/docs/screenshot.png" />
+
+  <!-- Structured Data / JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Parkrun Stats Overlay",
+    "url": "https://yoosufhaffejee.github.io/parkrun-sticker/",
+    "description": "Create beautiful, transparent parkrun stat stickers and overlays for Instagram stories and social media.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0"
+    }
+  }
+  </script>
 
   <style>
     :root {
@@ -361,7 +401,7 @@
     <section class="panel controls-panel">
       <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-          <h1>parkrun Sticker Builder</h1>
+          <h1>Parkrun Stats Overlay</h1>
           <p class="sub">Craft clean, aesthetic overlays for your social media posts.</p>
         </div>
         <button id="btnThemeToggle" class="btn-secondary" style="flex: none; padding: 10px; border-radius: 50%;" title="Toggle Theme">
@@ -393,7 +433,7 @@
           <div class="field">
             <label for="logoPreset">Logo Color</label>
             <select id="logoPreset">
-              <option value="parkrunPurple" selected>parkrun Purple</option>
+              <option value="parkrunPurple" selected>Parkrun Purple</option>
               <option value="white">White</option>
               <option value="black">Black</option>
               <option value="vitalityPink">Vitality Pink</option>
@@ -402,7 +442,7 @@
           <div class="field">
             <label for="infoPreset">Text Color</label>
             <select id="infoPreset">
-              <option value="parkrunPurple" selected>parkrun Purple</option>
+              <option value="parkrunPurple" selected>Parkrun Purple</option>
               <option value="white">White</option>
               <option value="black">Black</option>
               <option value="vitalityPink">Vitality Pink</option>
@@ -889,7 +929,7 @@
         ctx.fillStyle = logoInk;
         ctx.textAlign = 'center';
         ctx.font = '700 90px Inter, system-ui, sans-serif';
-        ctx.fillText('parkrun', centerX, layout.topPad + 90);
+        ctx.fillText('Parkrun', centerX, layout.topPad + 90);
         logoH = 120;
       }
 
@@ -906,7 +946,7 @@
     }
 
     function getFileName() {
-      return `parkrun-sticker-${inputs.layoutPreset.value}-${Date.now()}.png`;
+      return `parkrun-overlay-${inputs.layoutPreset.value}-${Date.now()}.png`;
     }
 
     function download() {
@@ -923,7 +963,7 @@
           try {
             await navigator.share({
               files: [file],
-              title: 'parkrun Sticker'
+              title: 'Parkrun Overlay'
             });
           } catch (e) {
             console.log('Share canceled or failed', e);

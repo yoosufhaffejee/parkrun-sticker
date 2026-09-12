@@ -1,8 +1,8 @@
-# 🏃 parkrun Sticker Builder
+# 🏃 Parkrun Stats Overlay
 
-A lightweight, mobile-first web app that allows you to create custom, beautiful sticker overlays for your parkrun achievements. Similar to Strava's sharing features, this tool lets you generate clean stats to overlay on your Instagram stories, WhatsApp statuses, or other social media.
+A lightweight, mobile-first web app that allows you to create custom, beautiful sticker overlays for your Parkrun achievements. Similar to Strava's sharing features, this tool lets you generate clean stats to overlay on your Instagram stories, WhatsApp statuses, or other social media.
 
-![parkrun Sticker Builder Screenshot](docs/screenshot.png)
+![Parkrun Stats Overlay Screenshot](docs/screenshot.png)
 
 ## ✨ Features
 
@@ -13,9 +13,9 @@ A lightweight, mobile-first web app that allows you to create custom, beautiful 
 - **🖼️ Configurable Layouts & Backgrounds:** Choose from Square, Portrait (IG Story), or Horizontal. You can also pick between a purely Transparent background or a frosted "Solid Card" backing.
 - **📊 Contextual, Customizable Stats:** 
   - Toggle stats on/off and watch the UI cleanly expand only the inputs you need. 
-  - Support for **5k** or **2k (Junior parkrun)**.
+  - Support for **5k** or **2k (Junior Parkrun)**.
   - Custom fields: Finish Time, Speed Range (auto-calculated), Achievement, Streak, Milestone, and Story Notes.
-- **🎨 Color Themes:** Customize the logo and text colors to match the parkrun branding or your photo's aesthetic.
+- **🎨 Color Themes:** Customize the logo and text colors to match the Parkrun branding or your photo's aesthetic.
 
 ## 🚀 How to Use
 
