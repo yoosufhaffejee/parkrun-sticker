@@ -2,100 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>parkrun Overlay Sticker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>parkrun Sticker Builder</title>
 
   <style>
     :root {
-      --ui-bg: #eef1f7;
+      --ui-bg: #f4f6fa;
+      --ui-bg-rgb: 244, 246, 250;
       --panel: #ffffff;
-      --panel-border: #d6dced;
-      --ui-text: #181d2a;
-      --ui-muted: #66738a;
-      --chip: #f5f7fc;
+      --panel-border: #e2e6f0;
+      --ui-text: #1a1d24;
+      --ui-muted: #6b7280;
+      --chip: #f3f4f6;
       --chip-active: #2b2441;
       --chip-active-text: #ffffff;
       --focus: #7f5cff;
-      --shadow: 0 14px 30px rgba(20, 28, 48, 0.1);
+      --shadow: 0 12px 32px rgba(20, 28, 48, 0.06);
+      --card-radius: 20px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html[data-theme="dark"] {
+      --ui-bg: #111318;
+      --ui-bg-rgb: 17, 19, 24;
+      --panel: #1a1d24;
+      --panel-border: #2d3342;
+      --ui-text: #f3f4f6;
+      --ui-muted: #9ca3af;
+      --chip: #2d3342;
+      --chip-active: #8b6aff;
+      --chip-active-text: #ffffff;
+      --focus: #8b6aff;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     }
 
     * { box-sizing: border-box; }
 
     body {
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
       margin: 0;
-      padding: 20px;
-      background: radial-gradient(circle at 100% 0%, #f9f8ff 0%, var(--ui-bg) 45%, #edf2f8 100%);
+      padding: 24px;
+      background: var(--ui-bg);
       color: var(--ui-text);
+      -webkit-font-smoothing: antialiased;
     }
 
     .app {
-      max-width: 1160px;
+      max-width: 1200px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(300px, 420px) 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(320px, 460px) 1fr;
+      gap: 24px;
       align-items: start;
     }
 
     .panel {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 20px;
+      border-radius: var(--card-radius);
       box-shadow: var(--shadow);
-      padding: 16px;
+      padding: 24px;
+      transition: background var(--transition), border-color var(--transition);
     }
 
     .preview-panel {
       position: sticky;
-      top: 16px;
+      top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .canvas-container {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px dashed var(--panel-border);
+      background: repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%) 50% / 20px 20px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 12px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 24px;
+      margin: 0 0 6px;
+      font-size: 26px;
+      font-weight: 800;
       letter-spacing: -0.03em;
     }
 
     .sub {
-      margin: 0 0 14px;
+      margin: 0 0 24px;
       color: var(--ui-muted);
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
-    .field { margin-bottom: 12px; }
+    h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ui-muted);
+      margin: 0 0 12px;
+      font-weight: 700;
+    }
 
-    .field label {
+    .section-group {
+      margin-bottom: 28px;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label:not(.toggle):not(.radio-chip) {
       display: block;
       margin-bottom: 6px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--ui-muted);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ui-text);
     }
 
-    input, select, button {
+    input[type="text"], select {
       width: 100%;
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      background: #fff;
+      border-radius: 10px;
+      background: var(--ui-bg);
       color: var(--ui-text);
-      padding: 10px 12px;
+      padding: 10px 14px;
       font-size: 15px;
       outline: none;
+      transition: all 0.2s ease;
     }
 
-    input:focus, select:focus, button:focus {
+    input:focus, select:focus {
       border-color: var(--focus);
-      box-shadow: 0 0 0 3px rgba(127, 92, 255, 0.16);
+      box-shadow: 0 0 0 3px rgba(127, 92, 255, 0.15);
+      background: var(--panel);
     }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 9px;
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.1s, opacity 0.2s, background 0.2s;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--focus);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--ui-text);
+      color: var(--panel);
     }
 
     .chips {
@@ -108,192 +194,307 @@
       width: auto;
       border-radius: 999px;
       background: var(--chip);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 7px 12px;
-      border: 1px solid var(--panel-border);
-      cursor: pointer;
+      color: var(--ui-text);
+      font-size: 13px;
+      padding: 6px 14px;
+      flex: none;
     }
 
     .chip.active {
       background: var(--chip-active);
       color: var(--chip-active-text);
-      border-color: transparent;
     }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
+    /* Stats List */
+    .stats-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .check {
+    .stat-card {
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      background: var(--panel);
+      overflow: hidden;
+      transition: border-color var(--transition);
+    }
+
+    .stat-card.active {
+      border-color: var(--focus);
+    }
+
+    .stat-header {
+      padding: 12px 16px;
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-size: 13px;
-      background: #fbfcff;
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 7px 9px;
       cursor: pointer;
       user-select: none;
+      background: var(--ui-bg);
+      transition: background var(--transition);
     }
 
-    .check input { width: auto; margin: 0; }
+    .stat-card.active .stat-header {
+      background: transparent;
+      border-bottom: 1px solid var(--panel-border);
+    }
 
-    .toolbar {
+    .toggle {
       display: flex;
-      gap: 8px;
-      margin-top: 14px;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
     }
 
-    .btn-primary {
-      font-weight: 800;
+    .toggle input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
       cursor: pointer;
-      background: #2b2441;
-      border-color: #2b2441;
-      color: #fff;
+      accent-color: var(--focus);
     }
+
+    .stat-body {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height var(--transition), opacity var(--transition), padding var(--transition);
+      padding: 0 16px;
+    }
+
+    .stat-card.active .stat-body {
+      max-height: 100px;
+      opacity: 1;
+      padding: 12px 16px;
+    }
+
+    .radio-chip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--chip);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .radio-chip:has(input:checked) {
+      background: var(--panel);
+      border-color: var(--focus);
+      color: var(--focus);
+    }
+
+    .radio-chip input { display: none; }
 
     .status {
-      margin-top: 10px;
+      margin-top: -8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #e02424;
+      font-weight: 500;
       min-height: 18px;
-      font-size: 12px;
-      color: var(--ui-muted);
-    }
-
-    canvas {
-      width: 100%;
-      height: auto;
-      border-radius: 18px;
-      border: 1px dashed #cad3e5;
-      background: transparent;
-    }
-
-    .hint {
-      margin-top: 10px;
-      color: var(--ui-muted);
-      font-size: 12px;
-      line-height: 1.4;
     }
 
     @media (max-width: 980px) {
-      body { padding: 12px; }
-      .app { grid-template-columns: 1fr; }
-      .preview-panel { position: static; order: -1; }
-      .panel { border-radius: 16px; }
-    }
+      body { padding: 0; }
+      
+      .app { 
+        grid-template-columns: 1fr; 
+        gap: 0;
+      }
+      
+      .preview-panel {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-radius: 0 0 24px 24px;
+        margin-bottom: 16px;
+        background: rgba(var(--ui-bg-rgb), 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: none;
+        border-bottom: 1px solid var(--panel-border);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        padding: 16px 20px;
+      }
 
-    @media (max-width: 560px) {
-      .grid-2, .stats-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 21px; }
-      input, select, button { font-size: 16px; }
+      .controls-panel {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        padding: 0 20px 40px;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <section class="panel">
-      <h1>parkrun Sticker Builder</h1>
-      <p class="sub">Built for IG overlays: clean text-based stats, transparent export, and flexible layouts for square, portrait, or horizontal posts.</p>
-
-      <div class="field">
-        <label for="layoutPreset">Sticker layout</label>
-        <select id="layoutPreset">
-          <option value="square" selected>Square (1080 × 1080)</option>
-          <option value="portrait">Portrait (1080 × 1350)</option>
-          <option value="horizontal">Horizontal (1080 × 608)</option>
-        </select>
+    <!-- Preview Header (Sticky on mobile) -->
+    <section class="panel preview-panel">
+      <div class="canvas-container">
+        <canvas id="canvas" width="1080" height="1080"></canvas>
       </div>
-
-      <div class="field">
-        <label for="timeInput">Finish time (optional)</label>
-        <input id="timeInput" type="text" placeholder="e.g. 32:21 or 32m 21s" />
+      <div class="preview-actions">
+        <button class="btn-primary" id="btnShare" style="display:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          Share
+        </button>
+        <button class="btn-secondary" id="btnDownload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Save PNG
+        </button>
       </div>
-
-      <div class="field grid-2">
-        <div>
-          <label for="achievementInput">Achievement</label>
-          <input id="achievementInput" type="text" placeholder="Completed" />
-        </div>
-        <div>
-          <label for="streakInput">Streak / consistency</label>
-          <input id="streakInput" type="text" placeholder="5 in a row" />
-        </div>
-      </div>
-
-      <div class="field grid-2">
-        <div>
-          <label for="milestoneInput">Milestone progress</label>
-          <input id="milestoneInput" type="text" placeholder="Run #24 (1 to milestone)" />
-        </div>
-        <div>
-          <label for="storyInput">Story / note</label>
-          <input id="storyInput" type="text" placeholder="Tourist stop #7" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Presets</label>
-        <div class="chips" id="presetChips">
-          <button class="chip active" data-preset="performance" type="button">Performance</button>
-          <button class="chip" data-preset="progress" type="button">Progress</button>
-          <button class="chip" data-preset="story" type="button">Story</button>
-          <button class="chip" data-preset="privacy" type="button">Privacy-first</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Show on sticker (max 3 stats)</label>
-        <div class="stats-grid">
-          <label class="check"><input type="checkbox" id="showTime" checked /> Time</label>
-          <label class="check"><input type="checkbox" id="showDistance" checked /> Distance</label>
-          <label class="check"><input type="checkbox" id="showSpeedRange" checked /> Min / max speed</label>
-          <label class="check"><input type="checkbox" id="showAchievement" /> Achievement</label>
-          <label class="check"><input type="checkbox" id="showStreak" /> Streak</label>
-          <label class="check"><input type="checkbox" id="showMilestone" /> Milestone</label>
-          <label class="check"><input type="checkbox" id="showStory" /> Story note</label>
-        </div>
-      </div>
-
-      <div class="field grid-2">
-        <div>
-          <label for="logoPreset">Logo color</label>
-          <select id="logoPreset">
-            <option value="parkrunPurple" selected>parkrun Purple</option>
-            <option value="white">White</option>
-            <option value="black">Black</option>
-            <option value="vitalityPink">Vitality Pink</option>
-          </select>
-        </div>
-        <div>
-          <label for="infoPreset">Text color</label>
-          <select id="infoPreset">
-            <option value="parkrunPurple" selected>parkrun Purple</option>
-            <option value="white">White</option>
-            <option value="black">Black</option>
-            <option value="vitalityPink">Vitality Pink</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <button class="btn-primary" id="btnDownload" type="button">Download PNG</button>
-      </div>
-
-      <div class="status" id="status"></div>
-      <div class="hint">Transparent PNG output. Supported logo files: <code>parkrun-logo.svg</code> → <code>parkrun-logo.png</code> → <code>parkrun-logo-320.png</code>.</div>
     </section>
 
-    <section class="panel preview-panel">
-      <canvas id="canvas" width="1080" height="1080"></canvas>
+    <!-- Controls -->
+    <section class="panel controls-panel">
+      <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h1>parkrun Sticker Builder</h1>
+          <p class="sub">Craft clean, aesthetic overlays for your social media posts.</p>
+        </div>
+        <button id="btnThemeToggle" class="btn-secondary" style="flex: none; padding: 10px; border-radius: 50%;" title="Toggle Theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
+
+      <div class="section-group">
+        <h2>Appearance</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label for="layoutPreset">Layout</label>
+            <select id="layoutPreset">
+              <option value="square" selected>Square (1080 × 1080)</option>
+              <option value="portrait">Portrait (1080 × 1350)</option>
+              <option value="horizontal">Horizontal (1080 × 608)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bgPreset">Background</label>
+            <select id="bgPreset">
+              <option value="transparent" selected>Transparent</option>
+              <option value="card">Solid Card</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="logoPreset">Logo Color</label>
+            <select id="logoPreset">
+              <option value="parkrunPurple" selected>parkrun Purple</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+              <option value="vitalityPink">Vitality Pink</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="infoPreset">Text Color</label>
+            <select id="infoPreset">
+              <option value="parkrunPurple" selected>parkrun Purple</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+              <option value="vitalityPink">Vitality Pink</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <h2>Run Details (Select up to 3)</h2>
+        
+        <div class="field">
+          <div class="chips" id="presetChips">
+            <button class="chip active" data-preset="performance" type="button">Performance</button>
+            <button class="chip" data-preset="progress" type="button">Progress</button>
+            <button class="chip" data-preset="story" type="button">Story</button>
+          </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="stats-list" id="statsList">
+          <!-- Distance -->
+          <div class="stat-card" data-key="distance">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showDistance" checked /> Distance</label>
+            </div>
+            <div class="stat-body grid-2">
+              <label class="radio-chip"><input type="radio" name="distanceVal" value="5" checked /> 5k (Standard)</label>
+              <label class="radio-chip"><input type="radio" name="distanceVal" value="2" /> 2k (Junior)</label>
+            </div>
+          </div>
+
+          <!-- Time -->
+          <div class="stat-card" data-key="time">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showTime" checked /> Finish Time</label>
+            </div>
+            <div class="stat-body">
+              <input id="timeInput" type="text" placeholder="e.g. 27:32 or 27m 32s" />
+            </div>
+          </div>
+
+          <!-- Speed Range -->
+          <div class="stat-card" data-key="speedRange">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showSpeedRange" checked /> Min / Max Speed</label>
+            </div>
+            <!-- Auto calculated -->
+          </div>
+
+          <!-- Achievement -->
+          <div class="stat-card" data-key="achievement">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showAchievement" /> Achievement</label>
+            </div>
+            <div class="stat-body">
+              <input id="achievementInput" type="text" placeholder="e.g. Completed, New PB!" />
+            </div>
+          </div>
+
+          <!-- Streak -->
+          <div class="stat-card" data-key="streak">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showStreak" /> Streak</label>
+            </div>
+            <div class="stat-body">
+              <input id="streakInput" type="text" placeholder="e.g. 5 in a row" />
+            </div>
+          </div>
+
+          <!-- Milestone -->
+          <div class="stat-card" data-key="milestone">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showMilestone" /> Milestone</label>
+            </div>
+            <div class="stat-body">
+              <input id="milestoneInput" type="text" placeholder="e.g. Run #24 (1 to milestone)" />
+            </div>
+          </div>
+
+          <!-- Story -->
+          <div class="stat-card" data-key="story">
+            <div class="stat-header">
+              <label class="toggle"><input type="checkbox" id="showStory" /> Story Note</label>
+            </div>
+            <div class="stat-body">
+              <input id="storyInput" type="text" placeholder="e.g. Tourist stop #7" />
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
   <script>
-    const DISTANCE_KM = 5;
     const MAX_STATS = 3;
 
     const PRESETS = {
@@ -304,30 +505,32 @@
     };
 
     const LAYOUTS = {
-      square: { width: 1080, height: 1080, logoWidth: 640, topPad: 86, overlap: 6, maxPerRow: 2 },
-      portrait: { width: 1080, height: 1350, logoWidth: 680, topPad: 110, overlap: 0, maxPerRow: 2 },
-      horizontal: { width: 1080, height: 608, logoWidth: 520, topPad: 56, overlap: 22, maxPerRow: 3 }
+      square: { width: 1080, height: 1080, logoWidth: 640, topPad: 140, overlap: 6, maxPerRow: 2 },
+      portrait: { width: 1080, height: 1350, logoWidth: 680, topPad: 180, overlap: 0, maxPerRow: 2 },
+      horizontal: { width: 1080, height: 608, logoWidth: 520, topPad: 64, overlap: 22, maxPerRow: 3 }
     };
 
     const PRESET_STATS = {
       performance: ['time', 'distance', 'speedRange'],
       progress: ['achievement', 'streak', 'milestone'],
-      story: ['achievement', 'story', 'distance'],
-      privacy: ['speedRange', 'achievement', 'milestone']
+      story: ['achievement', 'story', 'distance']
     };
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
     const statusEl = document.getElementById('status');
-    const layoutPreset = document.getElementById('layoutPreset');
-    const timeInput = document.getElementById('timeInput');
-    const achievementInput = document.getElementById('achievementInput');
-    const streakInput = document.getElementById('streakInput');
-    const milestoneInput = document.getElementById('milestoneInput');
-    const storyInput = document.getElementById('storyInput');
-    const logoPreset = document.getElementById('logoPreset');
-    const infoPreset = document.getElementById('infoPreset');
+    const inputs = {
+      layoutPreset: document.getElementById('layoutPreset'),
+      bgPreset: document.getElementById('bgPreset'),
+      logoPreset: document.getElementById('logoPreset'),
+      infoPreset: document.getElementById('infoPreset'),
+      timeInput: document.getElementById('timeInput'),
+      achievementInput: document.getElementById('achievementInput'),
+      streakInput: document.getElementById('streakInput'),
+      milestoneInput: document.getElementById('milestoneInput'),
+      storyInput: document.getElementById('storyInput'),
+    };
 
     const checks = {
       time: document.getElementById('showTime'),
@@ -339,36 +542,107 @@
       story: document.getElementById('showStory')
     };
 
+    let renderTimer;
+
+    // Local Storage helpers
+    function saveState() {
+      const state = {
+        distanceVal: document.querySelector('input[name="distanceVal"]:checked').value,
+      };
+      for (const [k, el] of Object.entries(inputs)) state[k] = el.value;
+      for (const [k, el] of Object.entries(checks)) state[`chk_${k}`] = el.checked;
+      state.theme = document.documentElement.getAttribute('data-theme') || 'light';
+      localStorage.setItem('parkrunStickerState', JSON.stringify(state));
+    }
+
+    function loadState() {
+      try {
+        const stored = localStorage.getItem('parkrunStickerState');
+        if (!stored) return;
+        const state = JSON.parse(stored);
+        
+        if (state.distanceVal) {
+          const r = document.querySelector(`input[name="distanceVal"][value="${state.distanceVal}"]`);
+          if (r) r.checked = true;
+        }
+        for (const [k, el] of Object.entries(inputs)) {
+          if (state[k] !== undefined) el.value = state[k];
+        }
+        for (const [k, el] of Object.entries(checks)) {
+          if (state[`chk_${k}`] !== undefined) el.checked = state[`chk_${k}`];
+        }
+        if (state.theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) { console.error('Failed to load state', e); }
+    }
+
     function setStatus(msg) {
       statusEl.textContent = msg || '';
     }
 
-    function parseTimeToSeconds(text) {
-      const raw = (text || '').trim().toLowerCase();
-      if (!raw) return null;
+    // Toggle card logic
+    function updateCardVisuals() {
+      Object.entries(checks).forEach(([key, checkbox]) => {
+        const card = checkbox.closest('.stat-card');
+        if (checkbox.checked) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+    }
 
-      const colon = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-      if (colon) {
-        if (colon[3]) return Number(colon[1]) * 3600 + Number(colon[2]) * 60 + Number(colon[3]);
-        return Number(colon[1]) * 60 + Number(colon[2]);
+    function enforceMaxStats(changedEl) {
+      const selected = Object.values(checks).filter(el => el.checked);
+      if (selected.length <= MAX_STATS) {
+        setStatus('');
+        return;
       }
+      changedEl.checked = false;
+      setStatus(`Max ${MAX_STATS} stats allowed for a clean look.`);
+    }
 
-      const m = raw.match(/(\d+)\s*m/);
-      const s = raw.match(/(\d+)\s*s/);
-      if (m || s) return (m ? Number(m[1]) * 60 : 0) + (s ? Number(s[1]) : 0);
+    function applyPreset(presetName) {
+      const enabled = new Set(PRESET_STATS[presetName] || PRESET_STATS.performance);
+      Object.entries(checks).forEach(([key, el]) => {
+        el.checked = enabled.has(key);
+      });
+      document.querySelectorAll('#presetChips .chip').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.preset === presetName);
+      });
+      setStatus('');
+      updateCardVisuals();
+      scheduleRender();
+    }
+
+    function parseTimeToSeconds(text) {
+      let raw = (text || '').trim().toLowerCase();
+      if (!raw) return null;
+      
+      // Clean up common typos like "m" and "s" being attached or spaced weirdly
+      raw = raw.replace(/m/g, ':').replace(/s/g, '').replace(/\s+/g, '');
+      
+      const parts = raw.split(':').map(Number).filter(n => !isNaN(n));
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 1) return parts[0] * 60; // Assume minutes if just a number
+      
       return null;
     }
 
-    function getTimeText() {
-      const v = (timeInput.value || '').trim();
-      return v || 'Hidden';
+    function getDistance() {
+      return Number(document.querySelector('input[name="distanceVal"]:checked').value);
     }
 
     function speedRangeLabel() {
-      const seconds = parseTimeToSeconds(timeInput.value);
+      const seconds = parseTimeToSeconds(inputs.timeInput.value);
       if (!seconds || seconds <= 0) return 'Set time to estimate';
 
-      const avg = DISTANCE_KM / (seconds / 3600);
+      const dist = getDistance();
+      const avg = dist / (seconds / 3600);
       const variance = 0.45;
       const min = Math.max(4, avg - variance).toFixed(1);
       const max = (avg + variance).toFixed(1);
@@ -377,56 +651,28 @@
 
     function collectStats() {
       const all = [
-        { key: 'time', label: 'TIME', value: getTimeText() },
-        { key: 'distance', label: 'DISTANCE', value: `${DISTANCE_KM} km` },
+        { key: 'time', label: 'TIME', value: (inputs.timeInput.value || '').trim() || 'Hidden' },
+        { key: 'distance', label: 'DISTANCE', value: `${getDistance()} km` },
         { key: 'speedRange', label: 'SPEED RANGE', value: speedRangeLabel() },
-        { key: 'achievement', label: 'ACHIEVEMENT', value: achievementInput.value.trim() || 'Completed' },
-        { key: 'streak', label: 'STREAK', value: streakInput.value.trim() || 'Keep showing up' },
-        { key: 'milestone', label: 'MILESTONE', value: milestoneInput.value.trim() || 'One step closer' },
-        { key: 'story', label: 'STORY', value: storyInput.value.trim() || '5K done before 9am' }
+        { key: 'achievement', label: 'ACHIEVEMENT', value: inputs.achievementInput.value.trim() || 'Completed' },
+        { key: 'streak', label: 'STREAK', value: inputs.streakInput.value.trim() || 'Keep showing up' },
+        { key: 'milestone', label: 'MILESTONE', value: inputs.milestoneInput.value.trim() || 'One step closer' },
+        { key: 'story', label: 'STORY', value: inputs.storyInput.value.trim() || 'Great run!' }
       ];
 
-      const selected = all.filter((item) => checks[item.key].checked).slice(0, MAX_STATS);
-      if (!selected.length) return [{ label: 'DISTANCE', value: `${DISTANCE_KM} km` }];
+      const selected = all.filter(item => checks[item.key].checked).slice(0, MAX_STATS);
+      if (!selected.length) return [{ label: 'DISTANCE', value: `${getDistance()} km` }];
       return selected;
     }
 
-    function applyPreset(presetName) {
-      const enabled = new Set(PRESET_STATS[presetName] || PRESET_STATS.performance);
-      Object.entries(checks).forEach(([key, el]) => {
-        el.checked = enabled.has(key);
-      });
-
-      document.querySelectorAll('#presetChips .chip').forEach((chip) => {
-        chip.classList.toggle('active', chip.dataset.preset === presetName);
-      });
-
-      setStatus('');
-      render();
-    }
-
-    function enforceMaxStats(changedEl) {
-      const selected = Object.values(checks).filter((el) => el.checked);
-      if (selected.length <= MAX_STATS) {
-        setStatus('');
-        return;
-      }
-      changedEl.checked = false;
-      setStatus(`Max ${MAX_STATS} stats to keep sticker clean.`);
-    }
-
+    // Logo Handling
     const logoImg = new Image();
     let logoReady = false;
     let logoMode = 'none';
     let blobUrl = null;
 
-    function getLogoInk() {
-      return PRESETS[logoPreset.value] || PRESETS.parkrunPurple;
-    }
-
-    function getInfoInk() {
-      return PRESETS[infoPreset.value] || PRESETS.parkrunPurple;
-    }
+    function getLogoInk() { return PRESETS[inputs.logoPreset.value] || PRESETS.parkrunPurple; }
+    function getInfoInk() { return PRESETS[inputs.infoPreset.value] || PRESETS.parkrunPurple; }
 
     function revokeBlobUrl() {
       if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
@@ -447,7 +693,6 @@
       if (!res.ok) throw new Error('SVG fetch failed');
       const svgText = await res.text();
       const recolored = recolorSvgToInk(svgText, ink);
-
       revokeBlobUrl();
       blobUrl = URL.createObjectURL(new Blob([recolored], { type: 'image/svg+xml' }));
 
@@ -473,7 +718,6 @@
     async function ensureLogoLoaded() {
       const ink = getLogoInk();
       revokeBlobUrl();
-
       try { await loadSvgRecolored('parkrun-logo.svg', ink); return; } catch (_) {}
       try { await loadDirect('parkrun-logo.svg', 'svg-direct'); return; } catch (_) {}
       try { await loadDirect('parkrun-logo.png', 'png'); return; } catch (_) {}
@@ -482,6 +726,7 @@
       logoMode = 'none';
     }
 
+    // Canvas Drawing
     function drawLogoRasterCropCentered(_ctx, img, centerX, topY, targetW, tintColorOrNull) {
       const rasterW = 1400;
       const rasterH = 780;
@@ -504,10 +749,7 @@
         tctx.globalCompositeOperation = 'source-over';
       }
 
-      let minX = rasterW;
-      let minY = rasterH;
-      let maxX = -1;
-      let maxY = -1;
+      let minX = rasterW, minY = rasterH, maxX = -1, maxY = -1;
       try {
         const data = tctx.getImageData(0, 0, rasterW, rasterH).data;
         for (let y = 0; y < rasterH; y++) {
@@ -532,19 +774,6 @@
       const outH = croppedH * (targetW / croppedW);
       _ctx.drawImage(t, minX, minY, croppedW, croppedH, centerX - targetW / 2, topY, targetW, outH);
       return outH;
-    }
-
-    function roundRect(_ctx, x, y, width, height, radius, fill, stroke) {
-      const r = Math.min(radius, width / 2, height / 2);
-      _ctx.beginPath();
-      _ctx.moveTo(x + r, y);
-      _ctx.arcTo(x + width, y, x + width, y + height, r);
-      _ctx.arcTo(x + width, y + height, x, y + height, r);
-      _ctx.arcTo(x, y + height, x, y, r);
-      _ctx.arcTo(x, y, x + width, y, r);
-      _ctx.closePath();
-      if (fill) _ctx.fill();
-      if (stroke) _ctx.stroke();
     }
 
     function fitText(text, x, y, maxWidth, startSize, minSize) {
@@ -572,41 +801,78 @@
       const count = stats.length;
       const maxPerRow = Math.min(layout.maxPerRow, count);
       const rows = Math.ceil(count / maxPerRow);
-      const rowGap = layoutName === 'horizontal' ? 94 : 104;
-      let y = logoBottom + 36 - layout.overlap;
+      const rowGap = layoutName === 'horizontal' ? 94 : 110;
+      let y = logoBottom + 50 - layout.overlap;
 
       if (rows > 1 && layoutName === 'horizontal') {
-        y = logoBottom + 18;
+        y = logoBottom + 24;
       }
 
-      if (y + (rows * rowGap) > canvas.height - 28) {
-        y = Math.max(logoBottom + 8, canvas.height - (rows * rowGap) - 18);
+      if (y + (rows * rowGap) > canvas.height - 30) {
+        y = Math.max(logoBottom + 12, canvas.height - (rows * rowGap) - 20);
       }
 
       let i = 0;
       for (let row = 0; row < rows; row += 1) {
         const remaining = count - i;
         const rowItems = Math.min(maxPerRow, remaining);
-        const blockW = Math.min(360, Math.floor((canvas.width - 80) / rowItems));
+        const blockW = Math.min(380, Math.floor((canvas.width - 80) / rowItems));
         const rowW = rowItems * blockW;
         const startX = Math.floor((canvas.width - rowW) / 2);
 
         for (let col = 0; col < rowItems; col += 1) {
           const x = startX + col * blockW;
-          const size = layoutName === 'horizontal' ? 54 : 62;
-          drawStatTextBlock(x, y + row * rowGap, blockW, stats[i].label, stats[i].value, infoInk, size, 30);
+          const size = layoutName === 'horizontal' ? 56 : 64;
+          drawStatTextBlock(x, y + row * rowGap, blockW, stats[i].label, stats[i].value, infoInk, size, 32);
           i += 1;
         }
       }
     }
 
+    function drawCardBackground(layout) {
+      if (inputs.bgPreset.value === 'transparent') return;
+      
+      const isDarkText = getInfoInk() === PRESETS.black || getInfoInk() === PRESETS.parkrunPurple;
+      const bgColor = inputs.bgPreset.value === 'card' 
+        ? (isDarkText ? '#ffffff' : '#111111') 
+        : null;
+
+      if (bgColor) {
+        ctx.fillStyle = bgColor;
+        
+        // Draw a nice rounded rect with padding
+        const padX = 80;
+        const padY = 80;
+        const r = 40;
+        const w = canvas.width - (padX * 2);
+        const h = canvas.height - (padY * 2);
+        
+        ctx.beginPath();
+        ctx.moveTo(padX + r, padY);
+        ctx.arcTo(padX + w, padY, padX + w, padY + h, r);
+        ctx.arcTo(padX + w, padY + h, padX, padY + h, r);
+        ctx.arcTo(padX, padY + h, padX, padY, r);
+        ctx.arcTo(padX, padY, padX + w, padY, r);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Optional subtle border
+        ctx.strokeStyle = isDarkText ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
     function render() {
-      const layoutName = layoutPreset.value;
+      const layoutName = inputs.layoutPreset.value;
       const layout = LAYOUTS[layoutName] || LAYOUTS.square;
       canvas.width = layout.width;
       canvas.height = layout.height;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      drawCardBackground(layout);
+
       const infoInk = getInfoInk();
       const logoInk = getLogoInk();
       const centerX = canvas.width / 2;
@@ -626,52 +892,103 @@
       const stats = collectStats();
       const logoBottom = layout.topPad + logoH;
       renderStatsText(stats, layoutName, infoInk, logoBottom, layout);
+      
+      saveState();
+    }
+
+    function scheduleRender() {
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(render, 50);
+    }
+
+    function getFileName() {
+      return `parkrun-sticker-${inputs.layoutPreset.value}-${Date.now()}.png`;
     }
 
     function download() {
       const a = document.createElement('a');
-      a.download = `parkrun-sticker-${layoutPreset.value}-${Date.now()}.png`;
+      a.download = getFileName();
       a.href = canvas.toDataURL('image/png');
       a.click();
     }
 
-    function bindLiveInputs() {
-      [timeInput, achievementInput, streakInput, milestoneInput, storyInput].forEach((el) => {
-        el.addEventListener('input', render);
+    async function share() {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], getFileName(), { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'parkrun Sticker'
+            });
+          } catch (e) {
+            console.log('Share canceled or failed', e);
+          }
+        } else {
+          download();
+        }
       });
+    }
 
-      layoutPreset.addEventListener('change', render);
+    function bindEvents() {
+      // Inputs & Selects trigger render
+      Object.values(inputs).forEach(el => el.addEventListener('input', scheduleRender));
+      document.querySelectorAll('input[name="distanceVal"]').forEach(el => el.addEventListener('change', scheduleRender));
 
+      // Toggles check max stats and update visuals
       Object.values(checks).forEach((el) => {
         el.addEventListener('change', () => {
           enforceMaxStats(el);
-          render();
+          updateCardVisuals();
+          scheduleRender();
         });
       });
 
-      logoPreset.addEventListener('change', async () => {
+      inputs.logoPreset.addEventListener('change', async () => {
         await ensureLogoLoaded();
-        render();
+        scheduleRender();
       });
 
-      infoPreset.addEventListener('change', render);
       document.getElementById('btnDownload').addEventListener('click', download);
+      
+      if (navigator.share) {
+        const btnShare = document.getElementById('btnShare');
+        btnShare.style.display = 'flex';
+        btnShare.addEventListener('click', share);
+      }
 
       document.querySelectorAll('#presetChips .chip').forEach((chip) => {
         chip.addEventListener('click', () => applyPreset(chip.dataset.preset));
       });
+
+      // Expand card body if user clicks on the header (not just the checkbox)
+      document.querySelectorAll('.stat-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+            const checkbox = header.querySelector('input[type="checkbox"]');
+            checkbox.click();
+          }
+        });
+      });
+
+      // Theme toggle
+      document.getElementById('btnThemeToggle').addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        saveState();
+      });
     }
 
     async function init() {
-      achievementInput.value = 'Completed';
-      streakInput.value = '5 in a row';
-      milestoneInput.value = 'Run #24 (1 to milestone)';
-      storyInput.value = 'Tourist stop #7';
-
-      bindLiveInputs();
+      loadState();
+      updateCardVisuals();
+      bindEvents();
       await ensureLogoLoaded();
-      applyPreset('performance');
-      render();
+      scheduleRender();
     }
 
     init();
