@@ -794,11 +794,11 @@
       ctx.textAlign = 'center';
       ctx.fillStyle = color;
       ctx.globalAlpha = 0.78;
-      ctx.font = '700 18px Inter, system-ui, sans-serif';
+      ctx.font = '700 26px Inter, system-ui, sans-serif';
       ctx.fillText(label, x + (w / 2), y);
 
       ctx.globalAlpha = 1;
-      fitText(value, x + (w / 2), y + 56, w - 24, valueSize, minValueSize);
+      fitText(value, x + (w / 2), y + 60, w - 24, valueSize, minValueSize);
     }
 
     function renderStatsText(stats, layoutName, infoInk, logoBottom, layout) {
